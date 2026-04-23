@@ -1,6 +1,5 @@
 from .tournament_team import TournamentTeam
-from .user import User
-from datetime import datetime
+from datetime import datetime, timezone
 from ..value_objects.enums.tournament_state import TournamentState
 from .tournament_rule import TournamentRule
 from .team import Team
@@ -200,7 +199,19 @@ class Tournament:
     def update_tournament_rules(self, tournament_rule: TournamentRule):
         if self.__state != TournamentState.DRAFT:
             raise ValueError("El torneo no está en estado de borrador")
-        self.__tournament_rule = tournament_rule
+        # Conservar el id y created_at originales para no romper las FKs en la DB
+        self.__tournament_rule = TournamentRule(
+            id=self.__tournament_rule.id,
+            min_members=tournament_rule.min_members,
+            max_members=tournament_rule.max_members,
+            min_teams=tournament_rule.min_teams,
+            max_teams=tournament_rule.max_teams,
+            created_at=self.__tournament_rule.created_at,
+            updated_at=datetime.now(timezone.utc),
+            validation_list=list(tournament_rule.validation_list),
+            access_type=tournament_rule.access_type,
+            criterias=list(tournament_rule.criterias)
+        )
 
     def update_state(self, new_state: TournamentState):
         if self.validate_state_transition(new_state):
@@ -274,6 +285,7 @@ class Tournament:
             "state":           self.state.value,
             "category":        self.category.value,
             "creator_user_id": self.creator_user_id,
+            "users_tournaments": [{"user_id": m.user_id, "tournament_id": m.tournament_id, "rol": m.rol.value} for m in self.__users_tournaments],
             "tournament_rule": {
                 "id":              self.tournament_rule.id,
                 "min_members":     self.tournament_rule.min_members,

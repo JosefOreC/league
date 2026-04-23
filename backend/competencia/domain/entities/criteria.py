@@ -35,6 +35,10 @@ class Criteria:
     @property
     def updated_at(self) -> datetime:
         return self.__updated_at
+
+    @property
+    def value(self) -> float:
+        return self.__value
     
     def touch(self):
         self.__updated_at = datetime.now(timezone.utc)
