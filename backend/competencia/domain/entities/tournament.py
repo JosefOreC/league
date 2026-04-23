@@ -77,6 +77,8 @@ class Tournament:
             raise ValueError("El creador debe ser un usuario")
         self.__creator_user = creator_user
 
+    # METODOS PRIMITIVOS
+
     def __add_team(self, team: TournamentTeam):
         if not isinstance(team, TournamentTeam):
             raise ValueError("El equipo debe ser un equipo de torneo (TournamentTeam)")
@@ -93,10 +95,40 @@ class Tournament:
             if t.team.id == team.id:
                 self.__tournament_teams.remove(t)
                 break
+    
+    # METODOS DE RECUPERACIÓN DE EQUIPOS
+    def search_team_by_id(self, team_id:str) -> TournamentTeam | None:
+        for t in self.__tournament_teams:
+            if t.team.id == team_id:
+                return t
+        raise ValueError("El equipo no está inscrito en el torneo")
 
     def get_teams(self) -> tuple[TournamentTeam]:
         return tuple(self.__tournament_teams)
     
+    def get_teams_pending(self) -> list[TournamentTeam]:
+        return [t for t in self.__tournament_teams if t.state == TournamentTeamState.PENDING]
+
+    def get_teams_accepted(self) -> list[TournamentTeam]:
+        return [t for t in self.__tournament_teams if t.state == TournamentTeamState.ACCEPTED]
+
+    def get_teams_disqualified(self) -> list[TournamentTeam]:
+        return [t for t in self.__tournament_teams if t.state == TournamentTeamState.DISQUALIFIED]
+
+    def get_teams_retirated(self) -> list[TournamentTeam]:
+        return [t for t in self.__tournament_teams if t.state == TournamentTeamState.RETIRATED]
+    
+    # METODOS DE ACTUALIZACIÓN
+    def update_tournament_rules(self, tournament_rule: TournamentRule):
+        if self.__state != TournamentState.DRAFT:
+            raise ValueError("El torneo no está en estado de borrador")
+        self.__tournament_rule = tournament_rule
+
+    def update_state(self, new_state: TournamentState):
+        if self.validate_state_transition(new_state):
+            self.__state = new_state
+
+    # METODOS ESPECIFICOS DE FASE DE INSCRIPCION
     def register_team(self, team: Team):
         if self.__state != TournamentState.REGISTRATION_OPEN:
             raise ValueError("El torneo no está en estado de inscripción")
@@ -113,72 +145,53 @@ class Tournament:
             raise ValueError("El equipo no está inscrito en el torneo")
         self.__remove_team(team)
 
+    # METODOS DE VALIDACION DE FLUJO DE ESTADO
+    def validate_state_transition(self, new_state: TournamentState)->bool:
+        valid_transitions = {
+            TournamentState.DRAFT: {
+                TournamentState.IN_REVIEW
+            },
+            TournamentState.IN_REVIEW: {
+                TournamentState.DRAFT,
+                TournamentState.REGISTRATION_OPEN
+            },
+            TournamentState.REGISTRATION_OPEN: {
+                TournamentState.REGISTRATION_CLOSED
+            },
+            TournamentState.REGISTRATION_CLOSED: {
+                TournamentState.IN_PROGRESS
+            },
+            TournamentState.IN_PROGRESS: {
+                TournamentState.FINALIZED,
+                TournamentState.CANCELLED
+            }
+        }
+
+        allowed = valid_transitions.get(self.__state, set())
+
+        if new_state not in allowed:
+            raise ValueError(
+                f"Transición inválida: {self.__state} → {new_state}"
+            )
+        return True
+
+
+    # METODOS DE VERIFICACION
     def contains_team(self, team: Team) -> bool:
         for t in self.__tournament_teams:
             if t.team.id == team.id:
                 return True
         return False
-
-    def search_team_by_id(self, team_id:str) -> TournamentTeam | None:
-        for t in self.__tournament_teams:
-            if t.team.id == team_id:
-                return t
-        raise ValueError("El equipo no está inscrito en el torneo")
-
-    def get_teams_pending(self) -> list[TournamentTeam]:
-        return [t for t in self.__tournament_teams if t.state == TournamentTeamState.PENDING]
-
-    def get_teams_accepted(self) -> list[TournamentTeam]:
-        return [t for t in self.__tournament_teams if t.state == TournamentTeamState.ACCEPTED]
-
-    def get_teams_disqualified(self) -> list[TournamentTeam]:
-        return [t for t in self.__tournament_teams if t.state == TournamentTeamState.DISQUALIFIED]
-
-    def get_teams_retirated(self) -> list[TournamentTeam]:
-        return [t for t in self.__tournament_teams if t.state == TournamentTeamState.RETIRATED]
-
+    
     def is_full(self) -> bool:
         return len(self.__tournament_teams) == self.__tournament_rule.max_teams
-    
-    def update_tournament_rules(self, tournament_rule: TournamentRule):
-        if self.__state != TournamentState.DRAFT:
-            raise ValueError("El torneo no está en estado de borrador")
-        self.__tournament_rule = tournament_rule
 
-    def send_to_review(self):
-        if self.__state != TournamentState.DRAFT:
-            raise ValueError("El torneo no está en estado de borrador")
-        self.__state = TournamentState.IN_REVIEW
 
-    def back_to_draft(self):
-        if self.__state != TournamentState.IN_REVIEW:
-            raise ValueError("El torneo no está en estado de revisión")
-        self.__state = TournamentState.DRAFT
-    
-    def open_inscription(self):
-        if self.__state != TournamentState.IN_REVIEW:
-            raise ValueError("El torneo no está en estado de revisión")
-        self.__tournament_rule.validate_tournament_teams(self.get_teams())
-        self.__state = TournamentState.REGISTRATION_OPEN
-    
-    def close_inscription(self):
-        if self.__state != TournamentState.REGISTRATION_OPEN:
-            raise ValueError("El torneo no está en estado de inscripción")
-        self.__state = TournamentState.REGISTRATION_CLOSED
-        
-    def start_tournament(self):
-        if self.__state != TournamentState.REGISTRATION_CLOSED:
-            raise ValueError("El torneo no está en estado de inscripción cerrada")
-        self.__state = TournamentState.IN_PROGRESS
-    
-    def end_tournament(self):
-        if self.__state != TournamentState.IN_PROGRESS:
-            raise ValueError("El torneo no está en estado de progreso")
-        self.__state = TournamentState.FINALIZED
-    
-    def cancel_tournament(self):
-        if self.__state != TournamentState.IN_PROGRESS:
-            raise ValueError("El torneo no está en estado de progreso")
-        self.__state = TournamentState.CANCELLED
 
-        
+    
+
+   
+    
+    
+
+    

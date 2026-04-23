@@ -51,30 +51,6 @@ class TournamentRule:
     def updated_at(self) -> datetime:
         return self.__updated_at
     
-    @min_members.setter
-    def min_members(self, min_members: int):
-        if not isinstance(min_members, int) or min_members < 1:
-            raise ValueError("El número mínimo de miembros debe ser mayor o igual a 1")
-        self.__min_members = min_members
-
-    @max_members.setter
-    def max_members(self, max_members: int):
-        if not isinstance(max_members, int) or max_members < 1:
-            raise ValueError("El número máximo de miembros debe ser mayor o igual a 1")
-        self.__max_members = max_members
-    
-    @min_teams.setter
-    def min_teams(self, min_teams: int):
-        if not isinstance(min_teams, int) or min_teams < 1:
-            raise ValueError("El número mínimo de equipos debe ser mayor o igual a 1")
-        self.__min_teams = min_teams
-    
-    @max_teams.setter
-    def max_teams(self, max_teams: int):
-        if not isinstance(max_teams, int) or max_teams < 1:
-            raise ValueError("El número máximo de equipos debe ser mayor o igual a 1")
-        self.__max_teams = max_teams
-    
     def validate_team_rules(self, team: Team):
         if len(team.members) < self.__min_members:
             raise ValueError("El equipo no cumple el mínimo de miembros del torneo")
@@ -93,7 +69,3 @@ class TournamentRule:
             raise ValueError("El torneo excede el máximo de equipos inscritos")
         return True
     
-    def tournament_can_start(self, tournament_teams: list[TournamentTeam]) -> bool:
-        for tournament_team in tournament_teams:
-            self.validate_team_rules(tournament_team.team)
-        return self.validate_tournament_teams(tournament_teams)
