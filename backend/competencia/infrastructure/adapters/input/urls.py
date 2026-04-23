@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import test
+from .views import create_tournament
 
 urlpatterns = [
-    path('test/',test),
+    path('create/', create_tournament),
 ]

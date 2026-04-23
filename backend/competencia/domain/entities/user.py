@@ -12,8 +12,8 @@ class User:
         self.__birth_date = birth_date
         self.__age = self.__calculate_age()
         self.__password_hash = password_hash
-        self.__rol = SystemRol.from_value(rol)
-        self.__state = UserState.from_value(state)
+        self.__rol = rol
+        self.__state = state
     
     @property
     def id(self) -> int:

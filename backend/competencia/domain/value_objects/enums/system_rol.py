@@ -6,3 +6,6 @@ class SystemRol(enum.Enum):
     MANAGER = "manager"
     PARTICIPANT = "participant"
     
+        
+
+    

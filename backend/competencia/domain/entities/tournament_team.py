@@ -2,7 +2,7 @@ from .team import Team
 from .user import User
 from .institution import Institution
 from ..value_objects.enums.tournament_team_state import TournamentTeamState
-from ..value_objects.tournament_rule import TournamentRule
+from .tournament_rule import TournamentRule
 
 
 class TournamentTeam:

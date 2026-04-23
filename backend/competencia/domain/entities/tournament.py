@@ -2,25 +2,62 @@ from .tournament_team import TournamentTeam
 from .user import User
 from datetime import datetime
 from ..value_objects.enums.tournament_state import TournamentState
-from ..value_objects.tournament_rule import TournamentRule
+from .tournament_rule import TournamentRule
 from .team import Team
 from ..value_objects.enums.tournament_team_state import TournamentTeamState
-
+from uuid import uuid4
+from ..value_objects.enums.tournament_category import TournamentCategory
 
 class Tournament:
     def __init__(self, id: str, name:str, description:str, date_start:datetime, date_end:datetime,
                 tournament_rule: TournamentRule, state:TournamentState, 
-                creator_user:User=None, teams: list[TournamentTeam]=None):
+                creator_user_id, category: TournamentCategory, teams: list[TournamentTeam]=None):
         self.__name = name
         self.__description = description
+        if date_start > date_end:
+            raise ValueError("La fecha de inicio debe ser menor a la fecha de fin")
         self.__date_start = date_start
         self.__date_end = date_end
-        self.__creator_user = creator_user
+        self.__creator_user_id = creator_user_id
         self.__tournament_teams = teams if teams is not None else []
         self.__tournament_rule = tournament_rule
         self.__state = state
+        self.__category = category
         self.__id = id
     
+    @classmethod
+    def create(
+        cls,
+        name: str,
+        description: str,
+        date_start: datetime,
+        date_end: datetime,
+        max_teams: int,
+        creator_user_id: str, category: TournamentCategory
+    ):
+        now = datetime.now()
+
+        if date_start <= now:
+            raise ValueError("La fecha de inicio debe ser posterior a hoy")
+
+        if date_end <= date_start:
+            raise ValueError("La fecha de fin debe ser posterior al inicio")
+        id = str(uuid4())
+        tournament_rule = TournamentRule.create(max_teams=max_teams)
+        
+        return cls(
+            id=id,
+            name=name,
+            description=description,
+            date_start=date_start,
+            date_end=date_end,
+            tournament_rule=tournament_rule,
+            state=TournamentState.DRAFT,
+            creator_user_id=creator_user_id,
+            category=category,
+            teams=[]
+        )
+
     @property
     def id(self) -> str:
         return self.__id
@@ -42,9 +79,21 @@ class Tournament:
         return self.__date_end
     
     @property
-    def creator_user(self) -> User:
-        return self.__creator_user
-    
+    def creator_user_id(self) -> str:
+        return self.__creator_user_id
+
+    @property
+    def tournament_rule(self) -> TournamentRule:
+        return self.__tournament_rule
+
+    @property
+    def state(self) -> TournamentState:
+        return self.__state
+
+    @property
+    def category(self) -> TournamentCategory:
+        return self.__category
+
     @name.setter
     def name(self, name: str):
         if not isinstance(name, str) or not name:
@@ -71,11 +120,11 @@ class Tournament:
             raise ValueError("La fecha de fin debe ser mayor a la fecha de inicio")
         self.__date_end = date_end
 
-    @creator_user.setter
-    def creator_user(self, creator_user: User):
-        if not isinstance(creator_user, User):
-            raise ValueError("El creador debe ser un usuario")
-        self.__creator_user = creator_user
+    @creator_user_id.setter
+    def creator_user_id(self, creator_user_id: str):
+        if not isinstance(creator_user_id, str) or not creator_user_id:
+            raise ValueError("El creador debe ser una cadena no vacía")
+        self.__creator_user_id = creator_user_id
 
     # METODOS PRIMITIVOS
 

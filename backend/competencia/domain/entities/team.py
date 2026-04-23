@@ -1,18 +1,17 @@
 from .user import User
 from ..value_objects.enums.system_rol import SystemRol
 from ..value_objects.enums.user_state import UserState
-from .institution import Institution
 
 class Team:
-    def __init__(self, id:str, name:str, creator_user:User, teacher:User, institution:Institution, members:list[User], leader: User = None):
+    def __init__(self, id:str, name:str, creator_user:User, teacher:User, institution_id:str, members:list[User], leader: User = None):
         self.__id = id
         if not isinstance(name, str) or not name or len(name) < 3:
             raise ValueError("El nombre debe tener al menos 3 caracteres")
         self.__name = name
 
-        if not isinstance(institution, Institution):
+        if not isinstance(institution_id, str) or not institution_id:
             raise ValueError("La institución debe ser una institución")
-        self.__institution = institution
+        self.__institution_id = institution_id
 
         self.__members = []
         if not isinstance(creator_user, User) or creator_user.rol not in [SystemRol.MANAGER, SystemRol.ADMIN]:
@@ -53,8 +52,8 @@ class Team:
         return self.__leader
     
     @property
-    def institution(self) -> Institution:
-        return self.__institution
+    def institution_id(self) -> str:
+        return self.__institution_id
 
     @property
     def teacher(self) -> User:
