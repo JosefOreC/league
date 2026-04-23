@@ -4,4 +4,6 @@
 from competencia.infrastructure.adapters.output.models import (  # noqa: F401
     TournamentRuleModel,
     TournamentModel,
+    TournamentMemberModel,
+    CriteriaModel,
 )

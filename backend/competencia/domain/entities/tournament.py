@@ -7,11 +7,15 @@ from .team import Team
 from ..value_objects.enums.tournament_team_state import TournamentTeamState
 from uuid import uuid4
 from ..value_objects.enums.tournament_category import TournamentCategory
+from ..value_objects.enums.tournament_rol import TournamentRol
+from .tournament_member import TournamentMember
+
 
 class Tournament:
     def __init__(self, id: str, name:str, description:str, date_start:datetime, date_end:datetime,
                 tournament_rule: TournamentRule, state:TournamentState, 
-                creator_user_id, category: TournamentCategory, teams: list[TournamentTeam]=None):
+                creator_user_id, category: TournamentCategory, users_tournaments: list[TournamentMember],
+                teams: list[TournamentTeam]=None):
         self.__name = name
         self.__description = description
         if date_start > date_end:
@@ -24,6 +28,9 @@ class Tournament:
         self.__state = state
         self.__category = category
         self.__id = id
+        if not users_tournaments:
+            raise ValueError("El torneo debe tener al menos un usuario")
+        self.__users_tournaments = users_tournaments
     
     @classmethod
     def create(
@@ -44,6 +51,7 @@ class Tournament:
             raise ValueError("La fecha de fin debe ser posterior al inicio")
         id = str(uuid4())
         tournament_rule = TournamentRule.create(max_teams=max_teams)
+        users_tournaments = [TournamentMember(user_id=creator_user_id, tournament_id=id, rol=TournamentRol.MANAGER)]
         
         return cls(
             id=id,
@@ -55,7 +63,8 @@ class Tournament:
             state=TournamentState.DRAFT,
             creator_user_id=creator_user_id,
             category=category,
-            teams=[]
+            teams=[],
+            users_tournaments=users_tournaments
         )
 
     @property
@@ -93,6 +102,10 @@ class Tournament:
     @property
     def category(self) -> TournamentCategory:
         return self.__category
+
+    @property
+    def users_tournaments(self) -> tuple[TournamentMember]:
+        return tuple(self.__users_tournaments)
 
     @name.setter
     def name(self, name: str):
@@ -133,6 +146,13 @@ class Tournament:
             raise ValueError("El equipo debe ser un equipo de torneo (TournamentTeam)")
         if len(self.__tournament_teams) >= self.__tournament_rule.max_teams:
             raise ValueError("El torneo ha alcanzado el número máximo de equipos")
+        new_members = []
+        for user in team.users:
+            if user.id in [member.user_id for member in self.__users_tournaments]:
+                raise ValueError(f"El miembro del equipo {user.name} ya está inscrito en el torneo con otro equipo")
+            new_user_tournament = TournamentMember(user_id=user.id, tournament_id=self.id, rol=TournamentRol.PARTICIPANT)
+            new_members.append(new_user_tournament)
+        self.__users_tournaments.extend(new_members)
         self.__tournament_teams.append(team)
 
     def __remove_team(self, team: Team):
@@ -142,9 +162,18 @@ class Tournament:
             raise ValueError("El equipo no está inscrito en el torneo")
         for t in self.__tournament_teams:
             if t.team.id == team.id:
+                for m in t.members:
+                    self.__users_tournaments.remove(m)
                 self.__tournament_teams.remove(t)
                 break
     
+    def get_rol_by_user(self, user_id: str) -> TournamentRol | None:
+        """Devuelve el rol del usuario en el torneo, o None si no participa."""
+        for m in self.__users_tournaments:
+            if m.user_id == user_id:
+                return m.rol
+        return None
+
     # METODOS DE RECUPERACIÓN DE EQUIPOS
     def search_team_by_id(self, team_id:str) -> TournamentTeam | None:
         for t in self.__tournament_teams:
@@ -234,13 +263,28 @@ class Tournament:
     
     def is_full(self) -> bool:
         return len(self.__tournament_teams) == self.__tournament_rule.max_teams
-
-
-
     
-
-   
-    
-    
-
-    
+    def to_dict(self) -> dict:
+        return {
+            "id":              self.id,
+            "name":            self.name,
+            "description":     self.description,
+            "date_start":      self.date_start.isoformat(),
+            "date_end":        self.date_end.isoformat(),
+            "state":           self.state.value,
+            "category":        self.category.value,
+            "creator_user_id": self.creator_user_id,
+            "tournament_rule": {
+                "id":              self.tournament_rule.id,
+                "min_members":     self.tournament_rule.min_members,
+                "max_members":     self.tournament_rule.max_members,
+                "min_teams":       self.tournament_rule.min_teams,
+                "max_teams":       self.tournament_rule.max_teams,
+                "access_type":     self.tournament_rule.access_type.value,
+                "validation_list": list(self.tournament_rule.validation_list),
+                "criterias": [
+                    {"id": c.id, "name": c.name, "value": c.value}
+                    for c in self.tournament_rule.criterias
+                ],
+            },
+        }

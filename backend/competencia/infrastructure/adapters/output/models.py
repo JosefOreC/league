@@ -1,6 +1,5 @@
 from django.db import models
 
-
 class TournamentRuleModel(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
     min_members = models.IntegerField()
@@ -20,6 +19,34 @@ class TournamentRuleModel(models.Model):
     def __str__(self):
         return f"TournamentRule({self.id})"
 
+class CriteriaModel(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    value = models.FloatField()
+    tournament_rule = models.ForeignKey(
+        TournamentRuleModel,
+        on_delete=models.CASCADE,
+        related_name="criterias",
+    )
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    class Meta:
+        db_table = "competencia_criteria"
+    def __str__(self):
+        return f"Criteria({self.id} - {self.name})"
+
+class TournamentMemberModel(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    user_id = models.CharField(max_length=36)
+    tournament_id = models.CharField(max_length=36)
+    rol = models.CharField(max_length=20)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    class Meta:
+        db_table = "competencia_tournament_member"
+    def __str__(self):
+        return f"TournamentMember({self.id} - {self.user_id})"
 
 class TournamentModel(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
@@ -35,9 +62,14 @@ class TournamentModel(models.Model):
         on_delete=models.PROTECT,
         related_name="tournament",
     )
+    tournament_members = models.ManyToManyField(
+        TournamentMemberModel,
+        related_name="tournament",
+    )
 
     class Meta:
         db_table = "competencia_tournament"
 
     def __str__(self):
         return f"Tournament({self.id} - {self.name})"
+

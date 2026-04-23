@@ -1,13 +1,18 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from datetime import datetime
+from datetime import datetime, timezone
+from uuid import uuid4
 from ....application.use_cases.create_tournament_use_case import CreateTournamentUseCase
+from ....application.use_cases.config_tournament_rule_use_case import ConfigTournamentRuleUseCase
 from ....infrastructure.repositories.postgresql_repository.tournament_repository import TournamentRepositoryPostgresql
 from ....domain.entities.user import User
+from ....domain.entities.criteria import Criteria
+from ....domain.entities.tournament_rule import TournamentRule
 from ....domain.value_objects.enums.system_rol import SystemRol
 from ....domain.value_objects.enums.user_state import UserState
 from ....domain.value_objects.enums.tournament_category import TournamentCategory
+from ....domain.value_objects.enums.tournament_access_type import TournamentAccessType
 
 
 # ---------------------------------------------------------------------------
@@ -145,27 +150,187 @@ def create_tournament(request):
 
         # 6. Serializar y retornar respuesta
         return Response(
-            {
-                "id":              tournament.id,
-                "name":            tournament.name,
-                "description":     tournament.description,
-                "date_start":      tournament.date_start.isoformat(),
-                "date_end":        tournament.date_end.isoformat(),
-                "state":           tournament.state.value,
-                "category":        tournament.category.value,
-                "creator_user_id": tournament.creator_user_id,
-                "tournament_rule": {
-                    "id":          tournament.tournament_rule.id,
-                    "min_members": tournament.tournament_rule.min_members,
-                    "max_members": tournament.tournament_rule.max_members,
-                    "min_teams":   tournament.tournament_rule.min_teams,
-                    "max_teams":   tournament.tournament_rule.max_teams,
-                    "access_type": tournament.tournament_rule.access_type.value,
-                },
-            },
+            tournament.to_dict(),
             status=status.HTTP_201_CREATED,
         )
 
+    except ValueError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response(
+            {"error": "Error interno del servidor", "detail": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Helper: parseo de criterias del request
+# ---------------------------------------------------------------------------
+
+def _parse_criterias(raw: list) -> list[Criteria]:
+    """
+    Convierte la lista de criterias del request (dicts) a objetos Criteria de dominio.
+    Formato esperado de cada elemento:
+        {"name": "Creatividad", "description": "...", "value": 0.4}
+    """
+    result = []
+    for i, item in enumerate(raw):
+        if not isinstance(item, dict):
+            raise ValueError(f"El criterio #{i + 1} debe ser un objeto JSON.")
+        try:
+            c = Criteria.create(
+                name=item["name"],
+                description=item.get("description", ""),
+                value=float(item["value"]),
+            )
+        except KeyError as e:
+            raise ValueError(f"El criterio #{i + 1} le falta el campo: {e}")
+        result.append(c)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Views adicionales
+# ---------------------------------------------------------------------------
+
+@api_view(['GET'])
+def get_tournament_by_id(request, tournament_id: str):
+    """
+    GET /competencia/<tournament_id>/
+    """
+    try:
+        repository = TournamentRepositoryPostgresql()
+        tournament = repository.find_by_id(tournament_id)
+        if not tournament:
+            return Response(
+                {"error": f"Torneo '{tournament_id}' no encontrado"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(tournament.to_dict(), status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {"error": "Error interno del servidor", "detail": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(['GET'])
+def get_all_tournaments(request):
+    """
+    GET /competencia/
+    """
+    try:
+        repository  = TournamentRepositoryPostgresql()
+        tournaments = repository.find_all()
+        return Response(
+            [t.to_dict() for t in tournaments],
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        return Response(
+            {"error": "Error interno del servidor", "detail": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(['PUT'])
+def config_tournament_rules(request, tournament_id: str):
+    """
+    PUT /competencia/<tournament_id>/rules/
+
+    Configura las reglas de un torneo en estado DRAFT.
+    Solo el MANAGER del torneo puede hacerlo.
+
+    Body JSON:
+    {
+        "min_members":    2,
+        "max_members":    5,
+        "min_teams":      4,
+        "max_teams":      16,
+        "access_type":    "public" | "private",
+        "validation_list": ["inst-id-1"],          # solo si private
+        "criterias": [
+            {"name": "Creatividad", "description": "...", "value": 0.4},
+            {"name": "Innovacion",  "description": "...", "value": 0.6}
+        ]
+    }
+    """
+    data = request.data
+
+    # 1. Validar campos requeridos
+    required_fields = ["min_members", "max_members", "min_teams", "max_teams", "access_type"]
+    missing = [f for f in required_fields if f not in data]
+    if missing:
+        return Response(
+            {"error": f"Faltan los siguientes campos: {', '.join(missing)}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        # 2. Convertir access_type
+        try:
+            access_type = TournamentAccessType(data["access_type"])
+        except ValueError:
+            valid = [a.value for a in TournamentAccessType]
+            return Response(
+                {"error": f"access_type inválido. Valores permitidos: {valid}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 3. Parsear listas opcionales
+        validation_list = data.get("validation_list", [])
+        if not isinstance(validation_list, list):
+            return Response(
+                {"error": "validation_list debe ser una lista de IDs de institución"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        raw_criterias = data.get("criterias", [])
+        if not isinstance(raw_criterias, list):
+            return Response(
+                {"error": "criterias debe ser una lista de objetos"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        criterias = _parse_criterias(raw_criterias)
+
+        # 4. Construir la nueva TournamentRule de dominio
+        new_rule = TournamentRule.create(
+            min_members=int(data["min_members"]),
+            max_members=int(data["max_members"]),
+            min_teams=int(data["min_teams"]),
+            max_teams=int(data["max_teams"]),
+            access_type=access_type,
+            validation_list=validation_list,
+            criterias=criterias,
+        )
+
+        # 5. Auth (temporal) — sustituir por auth real
+        ### FOR TEST BEFORE IMPLEMENT AUTH
+        user = User(
+            id="1",
+            name="Test",
+            email="test@test.com",
+            date_registered=datetime.now(),
+            birth_date=datetime(2000, 1, 1),
+            rol=SystemRol.ADMIN,
+            state=UserState.ACTIVE,
+        )
+
+        # 6. Ejecutar use case
+        repository = TournamentRepositoryPostgresql()
+        use_case   = ConfigTournamentRuleUseCase(
+            tournament_repository=repository,
+            user=user,
+        )
+        tournament = use_case.execute(
+            tournament_rule=new_rule,
+            tournament_id=tournament_id,
+        )
+
+        return Response(tournament.to_dict(), status=status.HTTP_200_OK)
+
+    except PermissionError as e:
+        return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
     except ValueError as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
