@@ -1,10 +1,10 @@
 from .tournament_team import TournamentTeam
 from .user import User
 from datetime import datetime
-from .tournament_state import TournamentState
-from .tournament_rule import TournamentRule
+from ..value_objects.enums.tournament_state import TournamentState
+from ..value_objects.tournament_rule import TournamentRule
 from .team import Team
-from .tournament_team_state import TournamentTeamState
+from ..value_objects.enums.tournament_team_state import TournamentTeamState
 
 
 class Tournament:

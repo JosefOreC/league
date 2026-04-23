@@ -1,8 +1,7 @@
 import bcrypt
 from datetime import datetime
-import bcrypt
-from .system_rol import SystemRol
-from .user_state import UserState
+from ..value_objects.enums.system_rol import SystemRol
+from ..value_objects.enums.user_state import UserState
 
 class User: 
     def __init__(self,id:int, name:str, email:str, date_registered:datetime, birth_date:datetime, rol:SystemRol, state:UserState, password_hash:str=None):

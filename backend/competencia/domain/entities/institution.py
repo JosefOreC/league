@@ -1,4 +1,4 @@
-from .institution_category import InstitutionCategory
+from ..value_objects.enums.institution_category import InstitutionCategory
 
 class Institution:
     def __init__(self, id:int, name:str, category:InstitutionCategory, city:str, code:str):

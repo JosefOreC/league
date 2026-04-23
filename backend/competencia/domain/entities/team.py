@@ -1,6 +1,6 @@
 from .user import User
-from .system_rol import SystemRol
-from .user_state import UserState
+from ..value_objects.enums.system_rol import SystemRol
+from ..value_objects.enums.user_state import UserState
 from .institution import Institution
 
 class Team:

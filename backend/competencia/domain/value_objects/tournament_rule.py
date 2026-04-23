@@ -1,8 +1,8 @@
 from datetime import datetime
-from .team import Team
-from .tournament_team import TournamentTeam
-from .institution import Institution
-from .tournament_access_type import TournamentAccessType
+from ..entities.team import Team
+from ..entities.tournament_team import TournamentTeam
+from ..entities.institution import Institution
+from .enums.tournament_access_type import TournamentAccessType
 
 class TournamentRule:
     def __init__(self, id:str, tournament_id:str, min_members:int, max_members:int, min_teams:int, max_teams:int, created_at:datetime, updated_at:datetime, 
@@ -92,3 +92,8 @@ class TournamentRule:
         if len(tournament_teams) > self.__max_teams:
             raise ValueError("El torneo excede el máximo de equipos inscritos")
         return True
+    
+    def tournament_can_start(self, tournament_teams: list[TournamentTeam]) -> bool:
+        for tournament_team in tournament_teams:
+            self.validate_team_rules(tournament_team.team)
+        return self.validate_tournament_teams(tournament_teams)
