@@ -1,3 +1,3 @@
 from django.db import models
 
-# Create your models here.
+# Modelos de analitica movidos a competencia/infrastructure/adapters/output/models.py
