@@ -4,14 +4,10 @@ from ..value_objects.enums.system_rol import SystemRol
 from ..value_objects.enums.user_state import UserState
 
 class User: 
-    def __init__(self,id:int, name:str, email:str, date_registered:datetime, birth_date:datetime, rol:SystemRol, state:UserState, password_hash:str=None):
+    def __init__(self,id:int, name:str, email:str, rol:SystemRol, state:UserState):
         self.__id = id
         self.__name = name
         self.__email = email
-        self.__date_registered = date_registered
-        self.__birth_date = birth_date
-        self.__age = self.__calculate_age()
-        self.__password_hash = password_hash
         self.__rol = rol
         self.__state = state
     
@@ -63,18 +59,6 @@ class User:
     @property
     def email(self) -> str:
         return self.__email
-    
-    @property
-    def date_registered(self) -> datetime:
-        return self.__date_registered
-    
-    @property
-    def age(self) -> int:
-        return self.__age
-    
-    @property
-    def birth_date(self) -> datetime:
-        return self.__birth_date
 
     @name.setter
     def name(self, name: str):
@@ -88,44 +72,6 @@ class User:
             raise ValueError("El email debe ser una cadena no vacía")
         self.__email = email
     
-    @date_registered.setter
-    def date_registered(self, date_registered: datetime):
-        if not isinstance(date_registered, datetime):
-            raise ValueError("La fecha de registro debe ser una fecha")
-        self.__date_registered = date_registered
-    
-    @birth_date.setter
-    def birth_date(self, birth_date: datetime):
-        if not isinstance(birth_date, datetime):
-            raise ValueError("La fecha de nacimiento debe ser una fecha")
-        age = self.__calculate_age()
-        if age > 80:
-            raise ValueError("La edad no puede ser mayor a 80 años")
-        if age < 3:
-            raise ValueError("La edad no puede ser menor a 3 años")
-        self.__birth_date = birth_date
-        self.__age = age
-
-    @property
-    def password(self) -> str:
-        raise AttributeError("La contraseña no se puede obtener")
-        
-    @password.setter
-    def password(self, password: str):
-        if not isinstance(password, str) or not password:
-            raise ValueError("La contraseña debe ser una cadena no vacía")
-        if len(password) < 8:
-            raise ValueError("La contraseña debe tener al menos 8 caracteres")
-        if not any(c.isdigit() for c in password):
-            raise ValueError("La contraseña debe tener al menos un número")
-        if not any(c.isupper() for c in password):
-            raise ValueError("La contraseña debe tener al menos una mayúscula")
-        if not any(c.islower() for c in password):
-            raise ValueError("La contraseña debe tener al menos una minúscula")
-        self.__password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    
-    def verify_password(self, password: str) -> bool:
-        return bcrypt.checkpw(password.encode('utf-8'), self.__password_hash)
 
     @state.setter
     def state(self, state: UserState):

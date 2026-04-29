@@ -12,9 +12,9 @@ class User:
     __MIN_PASSWORD_LENGTH = 8
     __MIN_LOCK_TIME = 15
 
-    def __init__(self, id: uuid.UUID | None, email: str, password_hash: str, name: str, 
-                rol: SystemRol, state: UserState, birth_date: datetime, attempts: int, 
-                blocked_until: datetime | None, created_at: datetime, updated_at: datetime, 
+    def __init__(self, id: uuid.UUID, email: str, password_hash: str | None, name: str, 
+                rol: SystemRol, state: UserState, birth_date: datetime | None, attempts: int | None, 
+                blocked_until: datetime | None, created_at: datetime | None, updated_at: datetime | None, 
                 last_login: datetime | None):
         self.__id = id
         self.__email = email
