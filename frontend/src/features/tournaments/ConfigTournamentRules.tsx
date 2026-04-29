@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, Save, Rocket, Plus, Trash2 } from "lucide-react";
 
@@ -18,12 +18,53 @@ export function ConfigTournamentRules() {
     { id: "2", nombre: "Desempeño", descripcion: "Funcionamiento en arena", peso: 50 },
   ]);
 
+  const [rules, setRules] = useState({
+    minMembers: 2,
+    maxMembers: 5,
+    minTeams: 4,
+    maxTeams: 16,
+    accessType: "private",
+  });
+
   const [puntajeMaximo, setPuntajeMaximo] = useState("100");
   const [penalizaciones, setPenalizaciones] = useState("");
   const [desempate, setDesempate] = useState("");
 
   const [errorPeso, setErrorPeso] = useState("");
   const [reglasGuardadas, setReglasGuardadas] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Cargar datos iniciales
+  useEffect(() => {
+    const fetchTournament = async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/competencia/torneo/${tournamentId}/`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.rules) {
+            setRules({
+              minMembers: data.rules.min_members,
+              maxMembers: data.rules.max_members,
+              minTeams: data.rules.min_teams,
+              maxTeams: data.rules.max_teams,
+              accessType: data.rules.access_type,
+            });
+            if (data.rules.criterias && data.rules.criterias.length > 0) {
+              setCriterias(data.rules.criterias.map((c: any, i: number) => ({
+                id: i.toString(),
+                nombre: c.name,
+                descripcion: c.description,
+                peso: c.value * 100
+              })));
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error al cargar torneo:", err);
+      }
+    };
+    if (tournamentId) fetchTournament();
+  }, [tournamentId]);
 
   // Calcula la suma actual
   const sumaPesos = criterias.reduce((acc, c) => acc + (Number(c.peso) || 0), 0);
@@ -44,27 +85,58 @@ export function ConfigTournamentRules() {
     setCriterias(criterias.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
   };
 
-  const handleSaveRules = (e: React.FormEvent) => {
+  const handleSaveRules = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorPeso("");
 
-    // Validación 1: Pesos
     if (sumaPesos !== 100) {
       setErrorPeso(`La suma de los pesos debe ser 100%. Actualmente suma ${sumaPesos}%`);
       return;
     }
 
-    // Simulando guardado en Backend
-    alert("¡Reglas asociadas al torneo correctamente! Ahora puedes publicarlo.");
-    setReglasGuardadas(true);
+    setIsLoading(true);
+    try {
+      const payload = {
+        min_members: rules.minMembers,
+        max_members: rules.maxMembers,
+        min_teams: rules.minTeams,
+        max_teams: rules.maxTeams,
+        access_type: rules.accessType,
+        validation_list: [], // TODO: Agregar selector de instituciones si es privado
+        criterias: criterias.map(c => ({
+          name: c.nombre,
+          description: c.descripcion,
+          value: c.peso / 100
+        }))
+      };
+
+      const res = await fetch(`http://localhost:8000/competencia/torneo/${tournamentId}/rules/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        alert("¡Reglas asociadas al torneo correctamente!");
+        setReglasGuardadas(true);
+      } else {
+        const error = await res.json();
+        alert("Error al guardar reglas: " + (error.error || JSON.stringify(error)));
+      }
+    } catch (error) {
+      alert("Error de red: " + error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!reglasGuardadas) {
       alert("Error: Faltan configurar las reglas u otros datos obligatorios.");
       return;
     }
-    alert("¡Torneo publicado! El estado cambió a 'Inscripciones abiertas'. Se ha notificado a los docentes.");
+    // En el futuro esto llamará a un endpoint de publicación (status transition)
+    alert("¡Torneo publicado! El estado cambió a 'Inscripciones abiertas'.");
     navigate("/dashboard/torneos");
   };
 
@@ -88,8 +160,65 @@ export function ConfigTournamentRules() {
         <form onSubmit={handleSaveRules}>
           <div className="p-6 md:p-8 space-y-8">
             
-            {/* Sección de Criterios */}
+            {/* Sección: Reglas de Participación */}
             <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b border-slate-100 pb-2">
+                Reglas de Participación
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Mínimo de equipos</label>
+                  <input
+                    type="number"
+                    value={rules.minTeams}
+                    onChange={(e) => setRules({ ...rules, minTeams: parseInt(e.target.value) })}
+                    className="flex h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Máximo de equipos</label>
+                  <input
+                    type="number"
+                    value={rules.maxTeams}
+                    onChange={(e) => setRules({ ...rules, maxTeams: parseInt(e.target.value) })}
+                    className="flex h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Tipo de Acceso</label>
+                  <select
+                    value={rules.accessType}
+                    onChange={(e) => setRules({ ...rules, accessType: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="private">Privado (Solo instituciones)</option>
+                    <option value="public">Público (Abierto)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Mín. miembros por equipo</label>
+                  <input
+                    type="number"
+                    value={rules.minMembers}
+                    onChange={(e) => setRules({ ...rules, minMembers: parseInt(e.target.value) })}
+                    className="flex h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Máx. miembros por equipo</label>
+                  <input
+                    type="number"
+                    value={rules.maxMembers}
+                    onChange={(e) => setRules({ ...rules, maxMembers: parseInt(e.target.value) })}
+                    className="flex h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Sección de Criterios */}
+            <div className="space-y-4 pt-4 border-t border-slate-100">
               <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                 <h3 className="text-lg font-semibold text-slate-900">
                   Criterios de Evaluación

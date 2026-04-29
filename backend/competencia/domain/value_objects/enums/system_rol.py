@@ -5,6 +5,7 @@ class SystemRol(enum.Enum):
     COACH = "coach"
     MANAGER = "manager"
     PARTICIPANT = "participant"
+    INVITED = "invited"
     
         
 

@@ -12,22 +12,31 @@ import {
   LifeBuoy,
   Bot
 } from "lucide-react";
+import { SystemRol } from "../../types/auth";
 
 const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Torneos", href: "/dashboard/torneos", icon: Trophy },
-  { name: "Equipos", href: "/dashboard/equipos", icon: Users },
-  { name: "Competencias", href: "/dashboard/competencias", icon: Swords },
-  { name: "Resultados", href: "/dashboard/resultados", icon: ListOrdered },
-  { name: "IA Recomendaciones", href: "/dashboard/ia", icon: BrainCircuit },
-  { name: "Reportes", href: "/dashboard/reportes", icon: FileBarChart },
-  { name: "Instituciones", href: "/dashboard/instituciones", icon: Building2 },
-  { name: "Calendario", href: "/dashboard/calendario", icon: CalendarDays },
-  { name: "Soporte", href: "/dashboard/soporte", icon: LifeBuoy },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: [SystemRol.ADMIN, SystemRol.MANAGER, SystemRol.COACH, SystemRol.PARTICIPANT] },
+  { name: "Torneos", href: "/dashboard/torneos", icon: Trophy, roles: [SystemRol.ADMIN, SystemRol.MANAGER, SystemRol.COACH, SystemRol.PARTICIPANT, SystemRol.INVITED] },
+  { name: "Equipos", href: "/dashboard/equipos", icon: Users, roles: [SystemRol.ADMIN, SystemRol.MANAGER, SystemRol.COACH] },
+  { name: "Competencias", href: "/dashboard/competencias", icon: Swords, roles: [SystemRol.ADMIN, SystemRol.MANAGER, SystemRol.COACH] },
+  { name: "Resultados", href: "/dashboard/resultados", icon: ListOrdered, roles: [SystemRol.ADMIN, SystemRol.MANAGER, SystemRol.COACH, SystemRol.PARTICIPANT, SystemRol.INVITED] },
+  { name: "IA Recomendaciones", href: "/dashboard/ia", icon: BrainCircuit, roles: [SystemRol.ADMIN, SystemRol.MANAGER] },
+  { name: "Reportes", href: "/dashboard/reportes", icon: FileBarChart, roles: [SystemRol.ADMIN, SystemRol.MANAGER] },
+  { name: "Instituciones", href: "/dashboard/instituciones", icon: Building2, roles: [SystemRol.ADMIN] },
+  { name: "Calendario", href: "/dashboard/calendario", icon: CalendarDays, roles: [SystemRol.ADMIN, SystemRol.MANAGER, SystemRol.COACH, SystemRol.PARTICIPANT, SystemRol.INVITED] },
+  { name: "Soporte", href: "/dashboard/soporte", icon: LifeBuoy, roles: [SystemRol.ADMIN, SystemRol.MANAGER, SystemRol.COACH, SystemRol.PARTICIPANT, SystemRol.INVITED] },
 ];
+
+// Mock de usuario actual (Esto vendría de un Contexto de Autenticación)
+const currentUser = {
+  name: "Administrador",
+  rol: SystemRol.COACH
+};
 
 export function Sidebar() {
   const location = useLocation();
+
+  const filteredNavItems = navItems.filter(item => item.roles.includes(currentUser.rol));
 
   return (
     <div className="flex flex-col w-64 bg-slate-900 border-r border-slate-800 h-full">
@@ -39,7 +48,7 @@ export function Sidebar() {
       </div>
       <div className="flex-1 overflow-y-auto py-4">
         <nav className="space-y-1 px-2">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <Link

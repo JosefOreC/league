@@ -9,7 +9,7 @@ export function CreateTournament() {
     fechaInicio: "",
     fechaFin: "",
     categoria: "explorador",
-    limiteEquipos: "",
+    limiteEquipos: "16",
     descripcion: "",
   });
 
