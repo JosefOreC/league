@@ -43,7 +43,7 @@ export function CreateTournament() {
       setErrors(newErrors);
       return;
     }
-    
+
     try {
       const payload = {
         name: formData.nombre,
@@ -54,7 +54,7 @@ export function CreateTournament() {
         max_teams: parseInt(formData.limiteEquipos) || 16,
       };
 
-      const res = await fetch("http://localhost:8000/competencia/create/", {
+      const res = await fetch("http://localhost:8000/api/competencia/create/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -106,7 +106,7 @@ export function CreateTournament() {
               <h3 className="text-lg font-semibold text-slate-900 border-b border-slate-100 pb-2">
                 Detalles Generales
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="col-span-1 md:col-span-2 space-y-2">
                   <label htmlFor="nombre" className="text-sm font-medium text-slate-700 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">

@@ -3,16 +3,16 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime, timezone
 from uuid import uuid4
-from ....application.use_cases.create_tournament_use_case import CreateTournamentUseCase
-from ....application.use_cases.config_tournament_rule_use_case import ConfigTournamentRuleUseCase
-from ....infrastructure.repositories.postgresql_repository.tournament_repository import TournamentRepositoryPostgresql
-from ....domain.entities.user import User
-from ....domain.entities.criteria import Criteria
-from ....domain.entities.tournament_rule import TournamentRule
-from ....domain.value_objects.enums.system_rol import SystemRol
-from ....domain.value_objects.enums.user_state import UserState
-from ....domain.value_objects.enums.tournament_category import TournamentCategory
-from ....domain.value_objects.enums.tournament_access_type import TournamentAccessType
+from .....application.use_cases.create_tournament_use_case import CreateTournamentUseCase
+from .....application.use_cases.config_tournament_rule_use_case import ConfigTournamentRuleUseCase
+from .....infrastructure.repositories.postgresql_repository.tournament_repository import TournamentRepositoryPostgresql
+from .....domain.entities.user import User
+from .....domain.entities.criteria import Criteria
+from .....domain.entities.tournament_rule import TournamentRule
+from .....domain.value_objects.enums.system_rol import SystemRol
+from .....domain.value_objects.enums.user_state import UserState
+from .....domain.value_objects.enums.tournament_category import TournamentCategory
+from .....domain.value_objects.enums.tournament_access_type import TournamentAccessType
 
 
 # ---------------------------------------------------------------------------
