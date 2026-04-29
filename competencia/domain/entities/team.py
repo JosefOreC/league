@@ -1,6 +1,6 @@
 from .user import User
-from ..value_objects.enums.system_rol import SystemRol
-from ..value_objects.enums.user_state import UserState
+from authentication.domain.value_objects.enum.system_rol import SystemRol
+from authentication.domain.value_objects.enum.user_state import UserState
 
 class Team:
     def __init__(self, id:str, name:str, creator_user:User, teacher:User, institution_id:str, members:list[User], leader: User = None):

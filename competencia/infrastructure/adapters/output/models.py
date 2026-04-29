@@ -7,12 +7,11 @@ class TournamentRuleModel(models.Model):
     min_teams = models.IntegerField()
     max_teams = models.IntegerField()
     access_type = models.CharField(max_length=20)
-    # Lista de institution_ids permitidas (solo aplica si access_type=PRIVATE)
-    # Se almacena como JSON: ["id1", "id2", ...]
     validation_list = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
-
+    date_start_inscription = models.DateTimeField(blank=True, null=True)
+    date_end_inscription = models.DateTimeField(blank=True, null=True)
     class Meta:
         db_table = "competencia_tournament_rule"
 
@@ -24,11 +23,6 @@ class CriteriaModel(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     value = models.FloatField()
-    tournament_rule = models.ForeignKey(
-        TournamentRuleModel,
-        on_delete=models.CASCADE,
-        related_name="criterias",
-    )
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
     class Meta:

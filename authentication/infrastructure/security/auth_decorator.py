@@ -3,9 +3,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from authentication.application.service.jwt_service import JWTService
 from authentication.domain.value_objects.enum.system_rol import SystemRol
-from authentication.domain.value_objects.enum.user_state import UserState
-from authentication.application.service.auth_identity_service import AuthIdentityService
-
 
 def auth_required(allowed_roles: list[SystemRol] = None):
     """
@@ -34,17 +31,27 @@ def auth_required(allowed_roles: list[SystemRol] = None):
             try:
                 payload = jwt_service.verify_token(token)
 
-                # Validar tipo
                 if payload.get("type") != "access":
                     return Response(
                         {"error": "Token de acceso inválido"},
                         status=status.HTTP_401_UNAUTHORIZED
                     )
 
-                # Adjuntar payload al request
+                user_role = payload.get("rol")
+
+                if allowed_roles:
+                    valid_roles = [role.value for role in allowed_roles]
+                    if user_role not in valid_roles:
+                        return Response(
+                            {"error": f"No tiene permisos suficientes, {user_role}"},
+                            status=status.HTTP_403_FORBIDDEN
+                        )
+
                 request.user_data = payload
 
                 return view_func(request, *args, **kwargs)
+            
+        
 
             except ValueError as e:
                 return Response(

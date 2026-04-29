@@ -2,7 +2,7 @@ from ...domain.entities.tournament import Tournament
 from ...domain.entities.tournament_rule import TournamentRule
 from ...domain.ports.tournament_repository import TournamentRepository
 from ...domain.entities.user import User
-from ...domain.value_objects.enums.user_state import UserState
+from authentication.domain.value_objects.enum.user_state import UserState
 from ...domain.value_objects.enums.tournament_rol import TournamentRol
 
 class ConfigTournamentRuleUseCase:

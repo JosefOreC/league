@@ -1,7 +1,7 @@
 import bcrypt
 from datetime import datetime
-from ..value_objects.enums.system_rol import SystemRol
-from ..value_objects.enums.user_state import UserState
+from authentication.domain.value_objects.enum.system_rol import SystemRol
+from authentication.domain.value_objects.enum.user_state import UserState
 
 class User: 
     def __init__(self,id:int, name:str, email:str, rol:SystemRol, state:UserState):
@@ -41,13 +41,6 @@ class User:
             raise ValueError("El estado debe ser un estado")
         self.__state = state
 
-    def __calculate_age(self) -> int:
-        hoy = datetime.now()
-        edad = hoy.year - self.__birth_date.year
-        if hoy.month < self.__birth_date.month or (hoy.month == self.__birth_date.month and hoy.day < self.__birth_date.day):
-            edad -= 1
-        return edad
-    
     @property
     def name(self) -> str:
         return self.__name
@@ -84,6 +77,3 @@ class User:
         if not isinstance(rol, SystemRol):
             raise ValueError("El rol debe ser un rol")
         self.__rol = rol
-    
-    def can_participate(self) -> bool:
-        return self.state == UserState.ACTIVE

@@ -8,10 +8,15 @@ from .....application.use_cases.login_use_case import LoginUseCase, InvalidCrede
 from .....application.service.password_service import PasswordService
 from .....application.service.jwt_service import JWTService, InvalidToken
 from .....application.use_cases.refresh_token_use_case import RefreshTokenUseCase
+from ....security.auth_decorator import auth_required
+from .....application.service.auth_identity_service import AuthIdentityService
 
 user_repository = UserRepositoryPostgresql()
+
 password_service = PasswordService()
 jwt_service = JWTService()
+
+auth_identity_service = AuthIdentityService(user_repository)
 
 # Create your views here.
 @api_view(['POST'])
@@ -70,9 +75,11 @@ def register(request):
     return Response({"error": "No implementado"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@auth_required()
 def me(request):
-    return JsonResponse({"error": "No implementado"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    user = auth_identity_service.build_user_from_payload(request.user_data)
+    return Response(user.to_external_dict(), status=status.HTTP_200_OK)
 
 @api_view(['PUT'])
 def logout(request):
-    return JsonResponse({"error": "No implementado"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response({"error": "No implementado"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

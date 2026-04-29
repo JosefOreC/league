@@ -1,8 +1,8 @@
 from ...domain.entities.tournament import Tournament
 from ...domain.ports.tournament_repository import TournamentRepository
 from ...domain.entities.user import User
-from ...domain.value_objects.enums.system_rol import SystemRol
-from ...domain.value_objects.enums.user_state import UserState
+from authentication.domain.value_objects.enum.system_rol import SystemRol
+from authentication.domain.value_objects.enum.user_state import UserState
 from datetime import datetime
 from ...domain.value_objects.enums.tournament_category import TournamentCategory
 

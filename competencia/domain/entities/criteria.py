@@ -2,19 +2,23 @@ import uuid
 from datetime import datetime, timezone
 
 class Criteria:
-    def __init__(self, id:str, name:str, description:str, created_at:datetime, updated_at:datetime, value: float):
+    def __init__(self, id:str, name:str, description:str, min_value:float, max_value:float, created_at:datetime, updated_at:datetime, value: float):
         self.__id = id
         self.__name = name.upper()
         self.__description = description
+        if min_value > max_value:
+            raise ValueError("El valor mínimo debe ser menor o igual al valor máximo")
+        self.__min_value = min_value
+        self.__max_value = max_value
         self.__created_at = created_at
         self.__updated_at = updated_at
-        if value > 1.0 or value < 0.0:
+        if value > max_value or value < min_value:
             raise ValueError("El valor debe estar entre 0.0 y 1.0")
         self.__value = value
     
     @classmethod
-    def create(cls, name:str, description:str, value:float):
-        return cls(id=str(uuid.uuid4()), name=name, description=description, created_at=datetime.now(), updated_at=datetime.now(), value=value)
+    def create(cls, name:str, description:str, min_value:float, max_value:float, value:float):
+        return cls(id=str(uuid.uuid4()), name=name, description=description, min_value=min_value, max_value=max_value, created_at=datetime.now(), updated_at=datetime.now(), value=value)
 
     @property
     def id(self) -> str:

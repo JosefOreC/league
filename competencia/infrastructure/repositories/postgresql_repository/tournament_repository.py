@@ -13,7 +13,7 @@ from ...adapters.output.models import (
     CriteriaModel,
     TournamentMemberModel,
 )
-from datetime import datetime, timezone
+from datetime import datetime
 from uuid import uuid4
 
 
@@ -47,10 +47,6 @@ class TournamentRepositoryPostgresql(TournamentRepository):
 
     @staticmethod
     def _rule_to_domain(rule_orm: TournamentRuleModel) -> TournamentRule:
-        criterias = [
-            TournamentRepositoryPostgresql._criteria_to_domain(c)
-            for c in rule_orm.criterias.all()
-        ]
         return TournamentRule(
             id=rule_orm.id,
             min_members=rule_orm.min_members,
@@ -61,7 +57,8 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             updated_at=rule_orm.updated_at,
             validation_list=rule_orm.validation_list or [],
             access_type=TournamentAccessType(rule_orm.access_type),
-            criterias=criterias,
+            date_start_inscription=rule_orm.date_start_inscription,
+            date_end_inscription=rule_orm.date_end_inscription,
         )
 
     @staticmethod
@@ -106,21 +103,12 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             validation_list=list(rule.validation_list),
             created_at=rule.created_at,
             updated_at=rule.updated_at,
+            date_start_inscription=rule.date_start_inscription,
+            date_end_inscription=rule.date_end_inscription,
         )
         rule_orm.save()
 
-        # 2. Guardar criterias vinculadas a la regla
-        for criteria in rule.criterias:
-            CriteriaModel.objects.create(
-                id=criteria.id,
-                name=criteria.name,
-                value=criteria.value,
-                tournament_rule=rule_orm,
-                created_at=criteria.created_at,
-                updated_at=criteria.updated_at,
-            )
-
-        # 3. Guardar members del torneo
+        # 2. Guardar members del torneo
         member_orms = []
         for member in tournament.users_tournaments:
             member_orm = TournamentMemberModel.objects.create(
@@ -133,7 +121,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             )
             member_orms.append(member_orm)
 
-        # 4. Crear el torneo y vincular members (M2M)
+        # 3. Crear el torneo y vincular members (M2M)
         tournament_orm = TournamentModel.objects.create(
             id=tournament.id,
             name=tournament.name,
@@ -152,7 +140,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             tournament_orm = (
                 TournamentModel.objects
                 .select_related("tournament_rule")
-                .prefetch_related("tournament_members", "tournament_rule__criterias")
+                .prefetch_related("tournament_members")
                 .get(pk=id)
             )
             return self._tournament_to_domain(tournament_orm)
@@ -163,7 +151,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
         tournaments_orm = (
             TournamentModel.objects
             .select_related("tournament_rule")
-            .prefetch_related("tournament_members", "tournament_rule__criterias")
+            .prefetch_related("tournament_members")
             .all()
         )
         return [self._tournament_to_domain(t) for t in tournaments_orm]
@@ -187,19 +175,9 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             access_type=rule.access_type.value,
             validation_list=list(rule.validation_list),
             updated_at=rule.updated_at,
+            date_start_inscription=rule.date_start_inscription,
+            date_end_inscription=rule.date_end_inscription,
         )
-
-        # 2. Sincronizar criterias: delete-and-recreate
-        CriteriaModel.objects.filter(tournament_rule_id=rule.id).delete()
-        for criteria in rule.criterias:
-            CriteriaModel.objects.create(
-                id=criteria.id,
-                name=criteria.name,
-                value=criteria.value,
-                tournament_rule_id=rule.id,
-                created_at=criteria.created_at,
-                updated_at=criteria.updated_at,
-            )
 
         # 3. Actualizar torneo
         TournamentModel.objects.filter(pk=tournament.id).update(
@@ -237,7 +215,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
         tournaments_orm = (
             TournamentModel.objects
             .select_related("tournament_rule")
-            .prefetch_related("tournament_members", "tournament_rule__criterias")
+            .prefetch_related("tournament_members")
             .filter(name__icontains=name)
         )
         if not tournaments_orm.exists():
@@ -249,7 +227,6 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             tournament_orm = (
                 TournamentModel.objects
                 .select_related("tournament_rule")
-                .prefetch_related("tournament_rule__criterias")
                 .get(pk=tournament_id)
             )
             return self._rule_to_domain(tournament_orm.tournament_rule)

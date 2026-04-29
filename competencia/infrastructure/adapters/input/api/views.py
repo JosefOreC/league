@@ -20,8 +20,11 @@ from authentication.domain.value_objects.enum.system_rol import SystemRol
 from .....domain.value_objects.enums.tournament_category import TournamentCategory
 from .....domain.value_objects.enums.tournament_access_type import TournamentAccessType
 
-from .....infrastructure.security.auth_decorator import auth_required
+from authentication.infrastructure.security.auth_decorator import auth_required
+from .....application.services.user_compentencia_service import UserCompentenciaService
 
+
+user_compentencia_service = UserCompentenciaService()
 
 # ---------------------------------------------------------------------------
 # HELPERS
@@ -63,10 +66,6 @@ def _parse_criterias(raw: list) -> list[Criteria]:
     return result
 
 
-# ---------------------------------------------------------------------------
-# CREATE TOURNAMENT
-# ---------------------------------------------------------------------------
-
 @api_view(['POST'])
 @auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
 def create_tournament(request):
@@ -93,18 +92,8 @@ def create_tournament(request):
         )
 
     try:
-        # Usuario autenticado real obtenido desde auth decorator
-        from .....domain.value_objects.enums.system_rol import SystemRol as CompSystemRol
-        from .....domain.value_objects.enums.user_state import UserState as CompUserState
         user_data = getattr(request, "user_data", {})
-        
-        user = User(
-            id=user_data.get("user_id", "1"),
-            name=user_data.get("name", ""),
-            email=user_data.get("email", ""),
-            rol=CompSystemRol(user_data.get("rol", "admin")),
-            state=CompUserState(user_data.get("state", "active")),
-        )
+        user = user_compentencia_service.dict_to_user(user_data)
 
         name = str(data["name"]).strip()
         description = str(data["description"]).strip()
@@ -162,18 +151,15 @@ def create_tournament(request):
         )
 
 
-# ---------------------------------------------------------------------------
-# GET TOURNAMENT BY ID
-# ---------------------------------------------------------------------------
 
 @api_view(['GET'])
+@auth_required()
 def get_tournament_by_id(request, tournament_id: str):
-
     try:
         repository = TournamentRepositoryPostgresql()
 
         tournament = repository.find_by_id(tournament_id)
-
+        
         if not tournament:
             return Response(
                 {
@@ -197,11 +183,8 @@ def get_tournament_by_id(request, tournament_id: str):
         )
 
 
-# ---------------------------------------------------------------------------
-# GET ALL TOURNAMENTS
-# ---------------------------------------------------------------------------
-
 @api_view(['GET'])
+@auth_required([SystemRol.ADMIN])
 def get_all_tournaments(request):
 
     try:
@@ -223,10 +206,6 @@ def get_all_tournaments(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
-
-# ---------------------------------------------------------------------------
-# CONFIG TOURNAMENT RULES
-# ---------------------------------------------------------------------------
 
 @api_view(['PUT'])
 @auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
@@ -253,17 +232,9 @@ def config_tournament_rules(request, tournament_id: str):
         )
 
     try:
-        from .....domain.value_objects.enums.system_rol import SystemRol as CompSystemRol
-        from .....domain.value_objects.enums.user_state import UserState as CompUserState
         user_data = getattr(request, "user_data", {})
         
-        user = User(
-            id=user_data.get("user_id"),
-            name=user_data.get("name"),
-            email=user_data.get("email"),
-            rol=CompSystemRol(user_data.get("rol")),
-            state=CompUserState(user_data.get("state")),
-        )
+        user = user_compentencia_service.dict_to_user(user_data)
 
         try:
             access_type = TournamentAccessType(data["access_type"])

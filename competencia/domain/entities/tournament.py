@@ -8,13 +8,31 @@ from uuid import uuid4
 from ..value_objects.enums.tournament_category import TournamentCategory
 from ..value_objects.enums.tournament_rol import TournamentRol
 from .tournament_member import TournamentMember
-
+from ..value_objects.enums.tournament_type import TournamentType
+from ..value_objects.config_tournament.config_tournament import ConfigTournament
+from ..value_objects.config_tournament.config_tournament_factory import ConfigTournamentFactory
+from ..value_objects.config_tournament.config_round_robin import ConfigRoundRobin
+from ..value_objects.config_tournament.config_hybrid import ConfigHybrid
 
 class Tournament:
+    
+
+    def __get_validate_config(self):
+        return {
+            TournamentType.KNOCKOUT: {
+                "tournament_teams_count": self.__tournament_rule.max_teams,
+            },
+            TournamentType.ROUND_ROBIN: {},
+            TournamentType.HYBRID: {
+                "max_teams": self.__tournament_rule.max_teams,
+            }
+        }.get(self.__tournament_type.value)
+
     def __init__(self, id: str, name:str, description:str, date_start:datetime, date_end:datetime,
-                tournament_rule: TournamentRule, state:TournamentState, 
-                creator_user_id, category: TournamentCategory, users_tournaments: list[TournamentMember],
-                teams: list[TournamentTeam]=None):
+                tournament_rule: TournamentRule, state:TournamentState, creator_user_id, 
+                category: TournamentCategory, users_tournaments: list[TournamentMember],
+                teams: list[TournamentTeam]=None, tournament_type: TournamentType = TournamentType.KNOCKOUT, 
+                config_tournament:ConfigTournament=None):
         self.__name = name
         self.__description = description
         if date_start > date_end:
@@ -24,9 +42,11 @@ class Tournament:
         self.__creator_user_id = creator_user_id
         self.__tournament_teams = teams if teams is not None else []
         self.__tournament_rule = tournament_rule
+        self.__tournament_type = tournament_type
         self.__state = state
         self.__category = category
         self.__id = id
+        self.__config_tournament = config_tournament
         if not users_tournaments:
             raise ValueError("El torneo debe tener al menos un usuario")
         self.__users_tournaments = users_tournaments
@@ -51,7 +71,8 @@ class Tournament:
         id = str(uuid4())
         tournament_rule = TournamentRule.create(max_teams=max_teams)
         users_tournaments = [TournamentMember(user_id=creator_user_id, tournament_id=id, rol=TournamentRol.MANAGER)]
-        
+        config_tournament = ConfigTournamentFactory.create_config_tournament("knockout", {"max_teams": max_teams})
+
         return cls(
             id=id,
             name=name,
@@ -63,7 +84,8 @@ class Tournament:
             creator_user_id=creator_user_id,
             category=category,
             teams=[],
-            users_tournaments=users_tournaments
+            users_tournaments=users_tournaments,
+            config_tournament=config_tournament
         )
 
     @property
@@ -245,6 +267,7 @@ class Tournament:
                 TournamentState.REGISTRATION_OPEN
             },
             TournamentState.REGISTRATION_OPEN: {
+                TournamentState.IN_REVIEW,
                 TournamentState.REGISTRATION_CLOSED
             },
             TournamentState.REGISTRATION_CLOSED: {
@@ -253,6 +276,13 @@ class Tournament:
             TournamentState.IN_PROGRESS: {
                 TournamentState.FINALIZED,
                 TournamentState.CANCELLED
+            },
+            TournamentState.CANCELLED: {
+                TournamentState.DRAFT,
+                TournamentState.IN_REVIEW,
+                TournamentState.REGISTRATION_OPEN,
+                TournamentState.REGISTRATION_CLOSED,
+                TournamentState.IN_PROGRESS
             }
         }
 
@@ -286,17 +316,9 @@ class Tournament:
             "category":        self.category.value,
             "creator_user_id": self.creator_user_id,
             "users_tournaments": [{"user_id": m.user_id, "tournament_id": m.tournament_id, "rol": m.rol.value} for m in self.__users_tournaments],
-            "tournament_rule": {
-                "id":              self.tournament_rule.id,
-                "min_members":     self.tournament_rule.min_members,
-                "max_members":     self.tournament_rule.max_members,
-                "min_teams":       self.tournament_rule.min_teams,
-                "max_teams":       self.tournament_rule.max_teams,
-                "access_type":     self.tournament_rule.access_type.value,
-                "validation_list": list(self.tournament_rule.validation_list),
-                "criterias": [
-                    {"id": c.id, "name": c.name, "value": c.value}
-                    for c in self.tournament_rule.criterias
-                ],
-            },
+            "tournament_rule": self.tournament_rule.to_dict(),
         }
+    
+    def valid_all_rules(self)->bool:
+        rules_config = self.__get_validate_config()
+        self.__config_tournament.validate(**rules_config)
