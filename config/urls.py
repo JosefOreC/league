@@ -23,4 +23,5 @@ urlpatterns = [
     path('api/competencia/', include('competencia.infrastructure.adapters.input.api.urls')),
     path('api/simulacion/', include('simulacion.infrastructure.adapters.input.api.urls')),
     path('api/analitica/', include('analitica.infrastructure.adapters.input.api.urls')),
+    path('api/auth/', include('authentication.infrastructure.adapters.input.api.urls')),
 ]

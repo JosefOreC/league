@@ -14,7 +14,7 @@ class Criteria:
     
     @classmethod
     def create(cls, name:str, description:str, value:float):
-        return cls(id=str(uuid.uuid4()), name=name, description=description, created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc), value=value)
+        return cls(id=str(uuid.uuid4()), name=name, description=description, created_at=datetime.now(), updated_at=datetime.now(), value=value)
 
     @property
     def id(self) -> str:
@@ -41,7 +41,7 @@ class Criteria:
         return self.__value
     
     def touch(self):
-        self.__updated_at = datetime.now(timezone.utc)
+        self.__updated_at = datetime.now()
 
     def update_criteria(self, name:str, description:str, value:float):
         self.__name = name

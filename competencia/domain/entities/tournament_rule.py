@@ -40,7 +40,7 @@ class TournamentRule:
     
     @classmethod
     def create(cls, max_teams:int, min_members:int=2, max_members:int=5, min_teams:int=4, validation_list: list[str] = None, access_type:TournamentAccessType = TournamentAccessType.PRIVATE, criterias: list[Criteria] = None):
-        return cls(id=str(uuid4()), min_members=min_members, max_members=max_members, min_teams=min_teams, max_teams=max_teams, created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc), validation_list=validation_list, access_type=access_type, criterias=criterias)
+        return cls(id=str(uuid4()), min_members=min_members, max_members=max_members, min_teams=min_teams, max_teams=max_teams, created_at=datetime.now(), updated_at=datetime.now(), validation_list=validation_list, access_type=access_type, criterias=criterias)
 
     @property
     def id(self) -> str:
@@ -107,7 +107,7 @@ class TournamentRule:
         self.touch()
 
     def touch(self):
-        self.__updated_at = datetime.now(timezone.utc)
+        self.__updated_at = datetime.now()
     
     def validate_team_rules(self, team: Team):
         if len(team.members) < self.__min_members:

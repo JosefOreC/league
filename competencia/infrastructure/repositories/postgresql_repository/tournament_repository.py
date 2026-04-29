@@ -92,7 +92,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
     # -------------------------------------------------------------------------
 
     def save(self, tournament: Tournament) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now()
         rule = tournament.tournament_rule
 
         # 1. Guardar regla del torneo
@@ -175,7 +175,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
         TournamentModel.objects.filter(pk=id).delete()
 
     def update(self, tournament: Tournament) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now()
         rule = tournament.tournament_rule
 
         # 1. Actualizar regla

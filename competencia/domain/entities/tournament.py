@@ -207,7 +207,7 @@ class Tournament:
             min_teams=tournament_rule.min_teams,
             max_teams=tournament_rule.max_teams,
             created_at=self.__tournament_rule.created_at,
-            updated_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(),
             validation_list=list(tournament_rule.validation_list),
             access_type=tournament_rule.access_type,
             criterias=list(tournament_rule.criterias)
