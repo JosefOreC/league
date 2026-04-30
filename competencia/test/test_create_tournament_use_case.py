@@ -2,23 +2,26 @@
 Tests unitarios para CreateTournamentUseCase
 """
 import unittest
+import uuid
 from datetime import datetime, timedelta
 from unittest.mock import Mock, MagicMock
 
-from ..application.use_cases.create_tournament_use_case import CreateTournamentUseCase
-from ..domain.ports.tournament_repository import TournamentRepository
-from ..domain.entities.user import User
-from ..domain.value_objects.enums.system_rol import SystemRol
-from ..domain.value_objects.enums.user_state import UserState
-from ..domain.value_objects.enums.tournament_category import TournamentCategory
+from competencia.application.use_cases.create_tournament_use_case import CreateTournamentUseCase
+from competencia.domain.ports.tournament_repository import TournamentRepository
+from authentication.domain.entities.user import User
+from authentication.domain.value_objects.enum.system_rol import SystemRol
+from authentication.domain.value_objects.enum.user_state import UserState
+from competencia.domain.value_objects.enums.tournament_category import TournamentCategory
 
 
-def _user(id="u-1", rol=SystemRol.MANAGER, state=UserState.ACTIVE) -> User:
+def _user(id=None, rol=SystemRol.MANAGER, state=UserState.ACTIVE) -> User:
+    u_id = uuid.uuid4() if id is None else uuid.uuid5(uuid.NAMESPACE_DNS, str(id))
     return User(
-        id=id, name=f"User {id}", email=f"{id}@test.com",
-        date_registered=datetime(2024, 1, 1),
-        birth_date=datetime(2005, 1, 1),
-        rol=rol, state=state
+        id=u_id, email=f"{id}@test.com", password_hash="hash",
+        name=f"User {id}", rol=rol, state=state,
+        birth_date=datetime(2005, 1, 1), attempts=0,
+        blocked_until=None, created_at=datetime.now(),
+        updated_at=datetime.now(), last_login=None
     )
 
 
@@ -76,7 +79,7 @@ class TestCreateTournamentUseCase(unittest.TestCase):
         user = _user(rol=SystemRol.PARTICIPANT)
         use_case = CreateTournamentUseCase(user=user, tournament_repository=self.mock_repo)
         
-        with self.assertRaisesRegex(ValueError, "El usuario no tiene permisos para crear torneos"):
+        with self.assertRaisesRegex(ValueError, "Sin permisos"):
             use_case.execute(
                 name=self.valid_name, description=self.valid_desc,
                 date_start=self.valid_start, date_end=self.valid_end,
@@ -89,7 +92,7 @@ class TestCreateTournamentUseCase(unittest.TestCase):
         user = _user(rol=SystemRol.MANAGER, state=UserState.INACTIVE)
         use_case = CreateTournamentUseCase(user=user, tournament_repository=self.mock_repo)
         
-        with self.assertRaisesRegex(ValueError, "El usuario debe estar activo para crear torneos"):
+        with self.assertRaisesRegex(ValueError, "Usuario inactivo"):
             use_case.execute(
                 name=self.valid_name, description=self.valid_desc,
                 date_start=self.valid_start, date_end=self.valid_end,

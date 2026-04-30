@@ -22,6 +22,10 @@ class TournamentRule:
         self.__max_members = max_members
         if min_teams > max_teams:
             raise ValueError("El número mínimo de equipos debe ser menor o igual al número máximo de equipos")
+        if max_teams < 4:
+            raise ValueError("El número máximo de equipos debe ser mayor o igual a 4")
+        if max_teams > 64:
+            raise ValueError("El número máximo de equipos debe ser menor o igual a 64")
         self.__min_teams = min_teams
         self.__max_teams = max_teams
         self.__created_at = created_at

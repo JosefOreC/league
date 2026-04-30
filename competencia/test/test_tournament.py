@@ -2,24 +2,31 @@
 Tests unitarios para Tournament y TournamentRule (domain/entities/)
 """
 import unittest
+import uuid
 from datetime import datetime, timedelta
-from ..domain.entities.tournament import Tournament
-from ..domain.entities.tournament_rule import TournamentRule
-from ..domain.entities.user import User
-from ..domain.entities.team import Team
-from ..domain.value_objects.enums.tournament_state import TournamentState
-from ..domain.value_objects.enums.tournament_category import TournamentCategory
-from ..domain.value_objects.enums.tournament_access_type import TournamentAccessType
-from ..domain.value_objects.enums.system_rol import SystemRol
-from ..domain.value_objects.enums.user_state import UserState
+from competencia.domain.entities.tournament import Tournament
+from competencia.domain.entities.tournament_rule import TournamentRule
+from competencia.domain.entities.tournament_member import TournamentMember
+from competencia.domain.entities.participant import Participant
+from competencia.domain.entities.team import Team
+from authentication.domain.entities.user import User
+from authentication.domain.value_objects.enum.system_rol import SystemRol
+from authentication.domain.value_objects.enum.user_state import UserState
+from competencia.domain.value_objects.enums.tournament_state import TournamentState
+from competencia.domain.value_objects.enums.tournament_category import TournamentCategory
+from competencia.domain.value_objects.enums.tournament_access_type import TournamentAccessType
+from competencia.domain.value_objects.enums.tournament_rol import TournamentRol
+from competencia.domain.value_objects.enums.tournament_team_state import TournamentTeamState
 
 
 # MOCKUP
-def _user(id="u-1", rol=SystemRol.PARTICIPANT, state=UserState.ACTIVE) -> User:
-    return User(id=id, name=f"User {id}", email=f"{id}@test.com",
-                date_registered=datetime(2024, 1, 1),
-                birth_date=datetime(2005, 1, 1),
-                rol=rol, state=state)
+def _user(id=None, rol=SystemRol.PARTICIPANT, state=UserState.ACTIVE) -> User:
+    u_id = uuid.uuid4() if id is None else uuid.uuid5(uuid.NAMESPACE_DNS, str(id))
+    return User(id=u_id, email=f"{id}@test.com", password_hash="hash",
+                name=f"User {id}", rol=rol, state=state,
+                birth_date=datetime(2005, 1, 1), attempts=0,
+                blocked_until=None, created_at=datetime.now(),
+                updated_at=datetime.now(), last_login=None)
 
 
 def _manager(id="mgr-1") -> User:
@@ -31,24 +38,35 @@ def _coach(id="coach-1") -> User:
 
 
 def _team(id="team-1", n_members=2, institution_id="inst-1") -> Team:
-    manager = _manager()
-    coach   = _coach()
-    members = [_user(f"m-{i}") for i in range(n_members)]
-    return Team(id=id, name=f"Equipo {id}", creator_user=manager,
-                teacher=coach, institution_id=institution_id, members=members)
+    participants = [Participant(id=str(uuid.uuid4()), nombres=f"P{i}", apellidos=f"L{i}", documento_identidad=f"DNI-{id}-{i}", autorizacion_datos=True) for i in range(n_members)]
+    return Team(
+        id=id,
+        tournament_id="trn-1",
+        name=f"Equipo {id}",
+        category="PRIMARY",
+        institution_id=institution_id,
+        nivel_tecnico_declarado="BASICO",
+        representante_id="rep-1",
+        docente_asesor_id="doc-1",
+        participants=participants
+    )
 
 
 def _rule(min_members=2, max_members=5, min_teams=4, max_teams=16,
           access_type=TournamentAccessType.PUBLIC) -> TournamentRule:
+    now = datetime.now()
     return TournamentRule.create(
         max_teams=max_teams, min_members=min_members,
         max_members=max_members, min_teams=min_teams,
         access_type=access_type,
+        date_start_inscription=now + timedelta(days=1),
+        date_end_inscription=now + timedelta(days=9)
     )
 
 
 def _tournament(state=TournamentState.DRAFT, max_teams=8) -> Tournament:
     now = datetime.now()
+    members = [TournamentMember(user_id="mgr-1", tournament_id="trn-1", rol=TournamentRol.MANAGER)]
     return Tournament(
         id="trn-1",
         name="Torneo Test",
@@ -59,6 +77,7 @@ def _tournament(state=TournamentState.DRAFT, max_teams=8) -> Tournament:
         state=state,
         creator_user_id="mgr-1",
         category=TournamentCategory.EXPLORADOR,
+        users_tournaments=members
     )
 
 
@@ -76,24 +95,49 @@ class TestTournamentRuleCreation(unittest.TestCase):
         self.assertEqual(rule.max_teams, 16)
 
     def test_min_greater_than_max_members_raises(self):
+        now = datetime.now()
         with self.assertRaises(ValueError):
-            TournamentRule.create(max_teams=8, min_members=6, max_members=4)
+            TournamentRule.create(
+                max_teams=8, min_members=6, max_members=4,
+                date_start_inscription=now + timedelta(days=1),
+                date_end_inscription=now + timedelta(days=5)
+            )
 
     def test_max_members_less_than_2_raises(self):
+        now = datetime.now()
         with self.assertRaises(ValueError):
-            TournamentRule.create(max_teams=8, min_members=1, max_members=1)
+            TournamentRule.create(
+                max_teams=8, min_members=1, max_members=1,
+                date_start_inscription=now + timedelta(days=1),
+                date_end_inscription=now + timedelta(days=5)
+            )
 
     def test_min_greater_than_max_teams_raises(self):
+        now = datetime.now()
         with self.assertRaises(ValueError):
-            TournamentRule.create(max_teams=4, min_teams=8)
+            TournamentRule.create(
+                max_teams=4, min_teams=8,
+                date_start_inscription=now + timedelta(days=1),
+                date_end_inscription=now + timedelta(days=5)
+            )
 
     def test_max_teams_less_than_4_raises(self):
+        now = datetime.now()
         with self.assertRaises(ValueError):
-            TournamentRule.create(max_teams=2)
+            TournamentRule.create(
+                max_teams=2,
+                date_start_inscription=now + timedelta(days=1),
+                date_end_inscription=now + timedelta(days=5)
+            )
 
     def test_max_teams_greater_than_64_raises(self):
+        now = datetime.now()
         with self.assertRaises(ValueError):
-            TournamentRule.create(max_teams=65)
+            TournamentRule.create(
+                max_teams=65,
+                date_start_inscription=now + timedelta(days=1),
+                date_end_inscription=now + timedelta(days=5)
+            )
 
     def test_id_is_generated(self):
         rule = _rule()
@@ -102,7 +146,12 @@ class TestTournamentRuleCreation(unittest.TestCase):
         self.assertGreater(len(rule.id), 0)
 
     def test_access_type_default_is_private(self):
-        rule = TournamentRule.create(max_teams=8)
+        now = datetime.now()
+        rule = TournamentRule.create(
+            max_teams=8,
+            date_start_inscription=now + timedelta(days=1),
+            date_end_inscription=now + timedelta(days=5)
+        )
         self.assertEqual(rule.access_type, TournamentAccessType.PRIVATE)
 
     def test_touch_updates_updated_at(self):
@@ -133,18 +182,24 @@ class TestTournamentRuleValidation(unittest.TestCase):
             rule.validate_team_rules(team)
 
     def test_validate_private_institution_not_in_list_raises(self):
+        now = datetime.now()
         rule = TournamentRule.create(
             max_teams=8, access_type=TournamentAccessType.PRIVATE,
             validation_list=["inst-allowed"],
+            date_start_inscription=now + timedelta(days=1),
+            date_end_inscription=now + timedelta(days=5)
         )
         team = _team(institution_id="inst-NOT-allowed", n_members=2)
         with self.assertRaises(ValueError):
             rule.validate_team_rules(team)
 
     def test_validate_private_institution_in_list_ok(self):
+        now = datetime.now()
         rule = TournamentRule.create(
             max_teams=8, access_type=TournamentAccessType.PRIVATE,
             validation_list=["inst-1"],
+            date_start_inscription=now + timedelta(days=1),
+            date_end_inscription=now + timedelta(days=5)
         )
         team = _team(institution_id="inst-1", n_members=2)
         self.assertTrue(rule.validate_team_rules(team))
@@ -154,11 +209,15 @@ class TestTournamentRuleValidation(unittest.TestCase):
         from competencia.domain.value_objects.enums.tournament_team_state import TournamentTeamState
         rule = _rule(min_teams=2, max_teams=8)
         t1 = TournamentTeam(id="tt-1", tournament_id="trn-1",
-                            tournament_rule=rule, state=TournamentTeamState.PENDING,
-                            team=_team("t-1", n_members=3))
+                            state=TournamentTeamState.PENDING,
+                            member_in_tournament_func=lambda x: False,
+                            team=_team("t-1", n_members=3),
+                            qualify_score_team=[])
         t2 = TournamentTeam(id="tt-2", tournament_id="trn-1",
-                            tournament_rule=rule, state=TournamentTeamState.PENDING,
-                            team=_team("t-2", n_members=3))
+                            state=TournamentTeamState.PENDING,
+                            member_in_tournament_func=lambda x: False,
+                            team=_team("t-2", n_members=3),
+                            qualify_score_team=[])
         self.assertTrue(rule.validate_tournament_teams([t1, t2]))
 
     def test_validate_tournament_teams_too_few(self):
@@ -166,8 +225,10 @@ class TestTournamentRuleValidation(unittest.TestCase):
         from competencia.domain.value_objects.enums.tournament_team_state import TournamentTeamState
         rule = _rule(min_teams=4, max_teams=8)
         t1 = TournamentTeam(id="tt-1", tournament_id="trn-1",
-                            tournament_rule=rule, state=TournamentTeamState.PENDING,
-                            team=_team("t-1", n_members=3))
+                            state=TournamentTeamState.PENDING,
+                            member_in_tournament_func=lambda x: False,
+                            team=_team("t-1", n_members=3),
+                            qualify_score_team=[])
         with self.assertRaises(ValueError):
             rule.validate_tournament_teams([t1])
 
@@ -248,43 +309,45 @@ class TestTournamentTeamRegistration(unittest.TestCase):
     def _open_tournament(self, max_teams=8) -> Tournament:
         return _tournament(state=TournamentState.REGISTRATION_OPEN, max_teams=max_teams)
 
-    def test_register_team_ok(self):
+    def test_add_team_ok(self):
         t = self._open_tournament()
         team = _team(n_members=3)
-        t.register_team(team)
+        t.add_team(team)
         self.assertEqual(len(t.get_teams()), 1)
 
     def test_register_duplicate_team_raises(self):
         t = self._open_tournament()
         team = _team(n_members=3)
-        t.register_team(team)
+        t.add_team(team)
         with self.assertRaises(ValueError):
-            t.register_team(team)
+            t.add_team(team)
 
-    def test_register_team_when_not_registration_open_raises(self):
+    def test_add_team_when_not_registration_open_raises(self):
         t = _tournament(state=TournamentState.DRAFT)
         with self.assertRaises(ValueError):
-            t.register_team(_team(n_members=3))
+            t.add_team(_team(n_members=3))
 
-    def test_unregister_team_ok(self):
+    def test_unadd_team_ok(self):
         t = self._open_tournament()
         team = _team(n_members=3)
-        t.register_team(team)
-        t.unregister_team(team)
+        t.add_team(team)
+        t.remove_team(team.id)
         self.assertEqual(len(t.get_teams()), 0)
 
     def test_tournament_is_full(self):
         t = self._open_tournament(max_teams=4)
         for i in range(4):
-            t.register_team(_team(id=f"t-{i}", n_members=3))
+            t.add_team(_team(id=f"t-{i}", n_members=3))
+            t.get_teams()[i].state = TournamentTeamState.ACCEPTED
         self.assertTrue(t.is_full())
 
-    def test_register_beyond_max_raises(self):
+    def test_add_beyond_max_raises(self):
         t = self._open_tournament(max_teams=4)
         for i in range(4):
-            t.register_team(_team(id=f"t-{i}", n_members=3))
+            t.add_team(_team(id=f"t-{i}", n_members=3))
+            t.get_teams()[i].state = TournamentTeamState.ACCEPTED
         with self.assertRaises(ValueError):
-            t.register_team(_team(id="t-extra", n_members=3))
+            t.add_team(_team(id="t-extra", n_members=3))
 
 
 class TestTournamentQueries(unittest.TestCase):
@@ -292,8 +355,8 @@ class TestTournamentQueries(unittest.TestCase):
     def test_contains_team_true(self):
         t = _tournament(state=TournamentState.REGISTRATION_OPEN)
         team = _team(n_members=3)
-        t.register_team(team)
-        self.assertTrue(t.contains_team(team))
+        t.add_team(team)
+        self.assertTrue(t.contains_team(team.id))
 
     def test_contains_team_false(self):
         t = _tournament(state=TournamentState.REGISTRATION_OPEN)
@@ -302,7 +365,7 @@ class TestTournamentQueries(unittest.TestCase):
     def test_search_team_by_id_found(self):
         t = _tournament(state=TournamentState.REGISTRATION_OPEN)
         team = _team(id="specific-id", n_members=3)
-        t.register_team(team)
+        t.add_team(team)
         found = t.search_team_by_id("specific-id")
         self.assertEqual(found.team.id, "specific-id")
 
@@ -313,8 +376,8 @@ class TestTournamentQueries(unittest.TestCase):
 
     def test_get_teams_pending(self):
         t = _tournament(state=TournamentState.REGISTRATION_OPEN)
-        t.register_team(_team(id="t-1", n_members=3))
-        t.register_team(_team(id="t-2", n_members=3))
+        t.add_team(_team(id="t-1", n_members=3))
+        t.add_team(_team(id="t-2", n_members=3))
         self.assertEqual(len(t.get_teams_pending()), 2)
 
 

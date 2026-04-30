@@ -15,7 +15,11 @@ class TestTournamentDomainLogic(unittest.TestCase):
     def setUp(self):
         self.now = datetime.now()
         # Creamos una regla publica para evitar validaciones de institucion en este test
-        rule = TournamentRule.create(max_teams=4, access_type=TournamentAccessType.PUBLIC)
+        rule = TournamentRule.create(
+            max_teams=4, access_type=TournamentAccessType.PUBLIC,
+            date_start_inscription=self.now + timedelta(days=1),
+            date_end_inscription=self.now + timedelta(days=20)
+        )
         # Miembros obligatorios
         members = [TournamentMember(user_id="admin-id", tournament_id="trn-1", rol=TournamentRol.MANAGER)]
         # Creamos un torneo base
