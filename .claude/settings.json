@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python manage.py migrate analitica zero)",
+      "Bash(python manage.py makemigrations competencia)",
+      "Bash(python manage.py migrate competencia)",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

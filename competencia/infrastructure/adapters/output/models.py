@@ -193,3 +193,51 @@ class FinalRankingModel(models.Model):
     class Meta:
         db_table = "competencia_final_ranking"
 
+
+import uuid as _uuid
+
+
+class CriterioIAModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=_uuid.uuid4, editable=False)
+    torneo_id = models.CharField(max_length=36)
+    sesion_ia_id = models.CharField(max_length=36, db_index=True)
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, default="")
+    tipo_dato = models.CharField(max_length=10)
+    peso_porcentual = models.DecimalField(max_digits=5, decimal_places=2)
+    valor_minimo = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    valor_maximo = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    mayor_es_mejor = models.BooleanField(default=True)
+    orden = models.IntegerField(default=0)
+    estado = models.CharField(max_length=15, default="SUGERIDO")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "competencia_criterio_ia"
+        ordering = ["sesion_ia_id", "orden"]
+
+    def __str__(self):
+        return f"CriterioIA({self.nombre} – {self.peso_porcentual}%)"
+
+
+class NLPAnalysisModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=_uuid.uuid4, editable=False)
+    input_texto = models.TextField()
+    numero_equipos = models.IntegerField(null=True, blank=True)
+    categoria = models.CharField(max_length=20, null=True, blank=True)
+    nivel_tecnico = models.CharField(max_length=20, null=True, blank=True)
+    tipo_torneo_sugerido = models.CharField(max_length=20, null=True, blank=True)
+    intencion_usuario = models.TextField(blank=True, default="")
+    nivel_confianza = models.JSONField(default=dict)
+    estado_analisis = models.CharField(max_length=20)
+    campos_faltantes = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "competencia_nlp_analysis"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"NLPAnalysis({self.id} - {self.estado_analisis})"
+

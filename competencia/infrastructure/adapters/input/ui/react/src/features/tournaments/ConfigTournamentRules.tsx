@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, Save, Rocket, Plus, Trash2 } from "lucide-react";
 
@@ -24,9 +24,40 @@ export function ConfigTournamentRules() {
 
   const [errorPeso, setErrorPeso] = useState("");
   const [reglasGuardadas, setReglasGuardadas] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Calcula la suma actual
   const sumaPesos = criterias.reduce((acc, c) => acc + (Number(c.peso) || 0), 0);
+
+  useEffect(() => {
+    const loadTournament = async () => {
+      if (!tournamentId) return;
+      try {
+        const res = await fetch(`http://localhost:8000/api/competencia/torneo/${tournamentId}/`);
+        if (!res.ok) return;
+        const tournament = await res.json();
+        const rule = tournament?.tournament_rule;
+
+        if (rule) {
+          const backendCriterias = Array.isArray(rule.criterias) ? rule.criterias : [];
+          if (backendCriterias.length > 0) {
+            setCriterias(
+              backendCriterias.map((c: { id?: string; name: string; description?: string; value: number }, index: number) => ({
+                id: c.id || `${index + 1}`,
+                nombre: c.name || "",
+                descripcion: c.description || "",
+                peso: Math.round((Number(c.value) || 0) * 100),
+              }))
+            );
+          }
+        }
+      } catch {
+        // Mantener estado inicial si falla la carga
+      }
+    };
+
+    loadTournament();
+  }, [tournamentId]);
 
   const handleAddCriteria = () => {
     if (criterias.length < 10) {
@@ -44,7 +75,7 @@ export function ConfigTournamentRules() {
     setCriterias(criterias.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
   };
 
-  const handleSaveRules = (e: React.FormEvent) => {
+  const handleSaveRules = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorPeso("");
 
@@ -54,9 +85,46 @@ export function ConfigTournamentRules() {
       return;
     }
 
-    // Simulando guardado en Backend
-    alert("¡Reglas asociadas al torneo correctamente! Ahora puedes publicarlo.");
-    setReglasGuardadas(true);
+    if (!tournamentId) {
+      alert("No se encontró el ID del torneo.");
+      return;
+    }
+
+    const payload = {
+      min_members: 2,
+      max_members: 5,
+      min_teams: 4,
+      max_teams: 64,
+      access_type: "private",
+      validation_list: [],
+      criterias: criterias.map((c) => ({
+        name: c.nombre,
+        description: c.descripcion,
+        value: Number((Number(c.peso) / 100).toFixed(2)),
+      })),
+    };
+
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/competencia/torneo/${tournamentId}/rules/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert("Error al guardar reglas: " + JSON.stringify(errorData));
+        return;
+      }
+
+      alert("¡Reglas asociadas al torneo correctamente! Ahora puedes publicarlo.");
+      setReglasGuardadas(true);
+    } catch (error) {
+      alert("Error de red al guardar reglas: " + error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePublish = () => {
@@ -209,10 +277,11 @@ export function ConfigTournamentRules() {
           <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 p-6">
             <button
               type="submit"
+              disabled={loading}
               className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 h-10 px-4 py-2 shadow-sm"
             >
               <Save className="mr-2 h-4 w-4" />
-              Guardar Reglas
+              {loading ? "Guardando..." : "Guardar Reglas"}
             </button>
 
             <button
