@@ -98,7 +98,7 @@ def create_tournament(request):
     try:
         user_data = getattr(request, "user_data", {})
         user = UserCompentenciaService.dict_to_user(user_data)
-        category = TournamentCategory(data["category"])
+        category = (data["category"])
         date_start = _parse_datetime(data["date_start"], "date_start")
         date_end = _parse_datetime(data["date_end"], "date_end")
 

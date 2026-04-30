@@ -81,23 +81,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # DB PRUEBA
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-# DB PRODUCCION
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'league',      # Nombre de tu base de datos
-        'USER': 'admin',     # Tu usuario de PostgreSQL
-        'PASSWORD': 'admin',  # Tu contraseña
-        'HOST': 'localhost',  # '127.0.0.1' o la IP de tu servidor
-        'PORT': '5432',       # Puerto por defecto de PostgreSQL
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+# DB PRODUCCION
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'league',      # Nombre de tu base de datos
+#         'USER': 'admin',     # Tu usuario de PostgreSQL
+#         'PASSWORD': 'admin',  # Tu contraseña
+#         'HOST': 'localhost',  # '127.0.0.1' o la IP de tu servidor
+#         'PORT': '5432',       # Puerto por defecto de PostgreSQL
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -136,3 +136,4 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True

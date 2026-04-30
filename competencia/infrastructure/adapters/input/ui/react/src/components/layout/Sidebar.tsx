@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
+import { useAuth } from "../../context/AuthContext";
 import { 
   LayoutDashboard, 
   Trophy, 
@@ -12,22 +13,34 @@ import {
   LifeBuoy,
   Bot
 } from "lucide-react";
+import { SystemRol } from "../../types/auth";
 
 const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Torneos", href: "/dashboard/torneos", icon: Trophy },
-  { name: "Equipos", href: "/dashboard/equipos", icon: Users },
-  { name: "Competencias", href: "/dashboard/competencias", icon: Swords },
-  { name: "Resultados", href: "/dashboard/resultados", icon: ListOrdered },
-  { name: "IA Recomendaciones", href: "/dashboard/ia", icon: BrainCircuit },
-  { name: "Reportes", href: "/dashboard/reportes", icon: FileBarChart },
-  { name: "Instituciones", href: "/dashboard/instituciones", icon: Building2 },
-  { name: "Calendario", href: "/dashboard/calendario", icon: CalendarDays },
-  { name: "Soporte", href: "/dashboard/soporte", icon: LifeBuoy },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR, SystemRol.COACH, SystemRol.PARTICIPANTE] },
+  { name: "Torneos", href: "/dashboard/torneos", icon: Trophy, roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR, SystemRol.COACH, SystemRol.PARTICIPANTE, SystemRol.PUBLICO] },
+  { name: "Equipos", href: "/dashboard/equipos", icon: Users, roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR, SystemRol.COACH] },
+  { name: "Competencias", href: "/dashboard/competencias", icon: Swords, roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR, SystemRol.COACH] },
+  { name: "Resultados", href: "/dashboard/resultados", icon: ListOrdered, roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR, SystemRol.COACH, SystemRol.PARTICIPANTE, SystemRol.PUBLICO] },
+  { name: "IA Recomendaciones", href: "/dashboard/ia", icon: BrainCircuit, roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR] },
+  { name: "Reportes", href: "/dashboard/reportes", icon: FileBarChart, roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR] },
+  { name: "Instituciones", href: "/dashboard/instituciones", icon: Building2, roles: [SystemRol.ADMIN] },
+  { name: "Calendario", href: "/dashboard/calendario", icon: CalendarDays, roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR, SystemRol.COACH, SystemRol.PARTICIPANTE, SystemRol.PUBLICO] },
+  { name: "Soporte", href: "/dashboard/soporte", icon: LifeBuoy, roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR, SystemRol.COACH, SystemRol.PARTICIPANTE, SystemRol.PUBLICO] },
 ];
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const filteredNavItems = navItems.filter(
+    (item) => user && item.roles.includes(user.rol)
+  );
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <div className="flex flex-col w-64 bg-slate-900 border-r border-slate-800 h-full">
@@ -39,7 +52,7 @@ export function Sidebar() {
       </div>
       <div className="flex-1 overflow-y-auto py-4">
         <nav className="space-y-1 px-2">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <Link
@@ -70,21 +83,29 @@ export function Sidebar() {
           })}
         </nav>
       </div>
-      <div className="p-4 border-t border-slate-800">
-        <div className="bg-slate-800 rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <BrainCircuit className="h-4 w-4 text-purple-400" />
-            <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Motor IA</p>
+      <div className="p-4 border-t border-slate-800 space-y-3">
+        {/* Info de usuario autenticado */}
+        {user && (
+          <div className="flex items-center gap-3 px-1">
+            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+              {(user.name || user.email).charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm text-white font-semibold truncate leading-none mb-1">
+                {user.name || user.email.split('@')[0]}
+              </p>
+              <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
+                {user.rol}
+              </p>
+            </div>
           </div>
-          <div className="flex justify-between items-end mb-1">
-            <p className="text-sm text-white font-medium">Estado Óptimo</p>
-            <span className="text-[10px] text-green-400 font-bold bg-green-400/10 px-1.5 py-0.5 rounded">98%</span>
-          </div>
-          <div className="mt-2 w-full bg-slate-700 rounded-full h-1.5">
-            <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: '98%' }}></div>
-          </div>
-          <p className="text-xs text-slate-400 mt-2">Analizando 45 equipos</p>
-        </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors"
+        >
+          Cerrar sesión
+        </button>
       </div>
     </div>
   );

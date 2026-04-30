@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .config_tournament import ConfigTournament
 from ..enums.tournament_type import TournamentType
 

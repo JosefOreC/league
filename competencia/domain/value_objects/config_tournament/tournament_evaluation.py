@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ...entities.criteria import Criteria
 from ...entities.qualify_score_team import QualifyScoreTeam
 
