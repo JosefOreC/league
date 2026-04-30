@@ -2,7 +2,12 @@
 
 class ConfigTournament:
     
+    NAME = ""
+
     def validate(self, tournament_teams_count: int) -> bool:
+        raise NotImplementedError("Subclases deben implementar este método")
+
+    def validate_for_start(self, **args) -> bool:
         raise NotImplementedError("Subclases deben implementar este método")
 
     def to_dict(self):

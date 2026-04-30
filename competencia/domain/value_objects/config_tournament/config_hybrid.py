@@ -2,6 +2,9 @@ from .config_tournament import ConfigTournament
 from ..enums.tournament_type import TournamentType
 
 class ConfigHybrid(ConfigTournament):
+    
+    NAME = "hybrid"
+    
     def __init__(
         self, teams_for_group: int, classified_by_group: int, num_rounds: int,
         third_place: bool,  final_format: TournamentType = TournamentType.KNOCKOUT
@@ -22,7 +25,7 @@ class ConfigHybrid(ConfigTournament):
         self.__final_format = final_format
         self.__third_place = third_place
 
-    def validate(self, max_teams: int) -> bool:
+    def validate(self, max_teams: int, min_teams:int) -> bool:
         if self.__classified_by_group > self.__teams_for_group:
             raise ValueError("El número de clasificados por grupo debe ser menor o igual al número de equipos por grupo")
         if self.__num_rounds <= 0:
@@ -34,12 +37,20 @@ class ConfigHybrid(ConfigTournament):
     
     def to_dict(self) -> dict[str, any]:
         return {
-            "teams_for_group": self.__teams_for_group,
-            "classified_by_group": self.__classified_by_group,
-            "num_rounds": self.__num_rounds,
-            "final_format": self.__final_format,
-            "third_place": self.__third_place
+            "type": self.NAME,
+            "config":{
+                "teams_for_group": self.__teams_for_group,
+                "classified_by_group": self.__classified_by_group,
+                "num_rounds": self.__num_rounds,
+                "final_format": self.__final_format,
+                "third_place": self.__third_place
+            }
         }
+    
+    def validate_for_start(self, tournament_teams_accepted_count:int, **args) -> bool:
+        if tournament_teams_accepted_count % self.__teams_for_group != 0:
+            raise ValueError("El número de equipos debe ser multiplo del número de equipos por grupo")
+        return True
 
     @property
     def teams_for_group(self) -> int:

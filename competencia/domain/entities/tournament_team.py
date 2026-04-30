@@ -2,25 +2,25 @@ from .team import Team
 from .user import User
 from .institution import Institution
 from ..value_objects.enums.tournament_team_state import TournamentTeamState
-from .tournament_rule import TournamentRule
-
+from .qualify_score_team import QualifyScoreTeam
 
 class TournamentTeam:
     def __init__(
         self,
         id: str,
         tournament_id: int,
-        tournament_rule: TournamentRule,
         state: TournamentTeamState,
-        team: Team
+        member_in_tournament_func: callable,
+        team: Team,
+        qualify_score_team: QualifyScoreTeam
     ):
         self.__id = id
         self.__team = team
         self.__tournament_id = tournament_id
         self.__state = state
-        self.__tournament_rule = tournament_rule
-
         self.__validate_rules()
+        self.__member_in_tournament_func = member_in_tournament_func
+        self.__qualify_score_team = qualify_score_team
 
     @property
     def id(self) -> str:
@@ -51,10 +51,6 @@ class TournamentTeam:
         return self.__tournament_id
 
     @property
-    def tournament_rule(self) -> TournamentRule:
-        return self.__tournament_rule
-
-    @property
     def state(self) -> TournamentTeamState:
         return self.__state
 
@@ -65,9 +61,10 @@ class TournamentTeam:
         self.__state = state
 
     def add_member(self, member: User):
+        if self.__member_in_tournament_func(member):
+            raise ValueError("El miembro ya pertenece al torneo")
         if len(self.__team.members) + 1 > self.__tournament_rule.max_members:
             raise ValueError("Se excede el máximo de miembros permitido por el torneo")
-
         self.__team.add_member(member)
 
     def remove_member(self, member: User):
@@ -84,12 +81,3 @@ class TournamentTeam:
 
     def change_teacher(self, teacher: User):
         self.__team.change_teacher(teacher)
-
-    def __validate_rules(self):
-        size = len(self.__team.members)
-
-        if size < self.__tournament_rule.min_members:
-            raise ValueError("El equipo no cumple el mínimo de miembros del torneo")
-
-        if size > self.__tournament_rule.max_members:
-            raise ValueError("El equipo excede el máximo de miembros del torneo")

@@ -13,26 +13,15 @@ from ..value_objects.config_tournament.config_tournament import ConfigTournament
 from ..value_objects.config_tournament.config_tournament_factory import ConfigTournamentFactory
 from ..value_objects.config_tournament.config_round_robin import ConfigRoundRobin
 from ..value_objects.config_tournament.config_hybrid import ConfigHybrid
+from ..value_objects.config_tournament.tournament_evaluation import TournamentEvaluation
 
 class Tournament:
-    
-
-    def __get_validate_config(self):
-        return {
-            TournamentType.KNOCKOUT: {
-                "tournament_teams_count": self.__tournament_rule.max_teams,
-            },
-            TournamentType.ROUND_ROBIN: {},
-            TournamentType.HYBRID: {
-                "max_teams": self.__tournament_rule.max_teams,
-            }
-        }.get(self.__tournament_type.value)
 
     def __init__(self, id: str, name:str, description:str, date_start:datetime, date_end:datetime,
                 tournament_rule: TournamentRule, state:TournamentState, creator_user_id, 
                 category: TournamentCategory, users_tournaments: list[TournamentMember],
                 teams: list[TournamentTeam]=None, tournament_type: TournamentType = TournamentType.KNOCKOUT, 
-                config_tournament:ConfigTournament=None):
+                config_tournament:ConfigTournament=None, tournament_evaluation:TournamentEvaluation=None):
         self.__name = name
         self.__description = description
         if date_start > date_end:
@@ -47,6 +36,7 @@ class Tournament:
         self.__category = category
         self.__id = id
         self.__config_tournament = config_tournament
+        self.__tournament_evaluation = tournament_evaluation
         if not users_tournaments:
             raise ValueError("El torneo debe tener al menos un usuario")
         self.__users_tournaments = users_tournaments
@@ -72,6 +62,7 @@ class Tournament:
         tournament_rule = TournamentRule.create(max_teams=max_teams)
         users_tournaments = [TournamentMember(user_id=creator_user_id, tournament_id=id, rol=TournamentRol.MANAGER)]
         config_tournament = ConfigTournamentFactory.create_config_tournament("knockout", {"max_teams": max_teams})
+        tournament_evaluation = TournamentEvaluation.create()
 
         return cls(
             id=id,
@@ -85,7 +76,8 @@ class Tournament:
             category=category,
             teams=[],
             users_tournaments=users_tournaments,
-            config_tournament=config_tournament
+            config_tournament=config_tournament,
+            tournament_evaluation=tournament_evaluation
         )
 
     @property
@@ -115,6 +107,14 @@ class Tournament:
     @property
     def tournament_rule(self) -> TournamentRule:
         return self.__tournament_rule
+
+    @property
+    def config_tournament(self) -> ConfigTournament:
+        return self.__config_tournament
+
+    @property
+    def tournament_evaluation(self) -> TournamentEvaluation:
+        return self.__tournament_evaluation
 
     @property
     def state(self) -> TournamentState:
@@ -161,9 +161,20 @@ class Tournament:
         self.__creator_user_id = creator_user_id
 
     # METODOS PRIMITIVOS
+    
+    def get_validate_config(self):
+        return {
+            TournamentType.KNOCKOUT: {
+                "tournament_teams_count": self.__tournament_rule.max_teams,
+            },
+            TournamentType.ROUND_ROBIN: {},
+            TournamentType.HYBRID: {
+                "max_teams": self.__tournament_rule.max_teams,
+            }
+        }.get(self.__tournament_type.value)
 
-    def __add_team(self, team: TournamentTeam):
-        if not isinstance(team, TournamentTeam):
+    def add_team(self, team: Team):
+        if not isinstance(team, Team):
             raise ValueError("El equipo debe ser un equipo de torneo (TournamentTeam)")
         if len(self.__tournament_teams) >= self.__tournament_rule.max_teams:
             raise ValueError("El torneo ha alcanzado el número máximo de equipos")
@@ -173,10 +184,18 @@ class Tournament:
                 raise ValueError(f"El miembro del equipo {user.name} ya está inscrito en el torneo con otro equipo")
             new_user_tournament = TournamentMember(user_id=user.id, tournament_id=self.id, rol=TournamentRol.PARTICIPANT)
             new_members.append(new_user_tournament)
+        team = TournamentTeam(
+            id=str(uuid4()),
+            tournament_id=self.id,
+            state=TournamentTeamState.PENDING,
+            member_in_tournament_func=self.member_in_tournament,
+            team=team,
+            qualify_score_team=[]
+        )
         self.__users_tournaments.extend(new_members)
         self.__tournament_teams.append(team)
 
-    def __remove_team(self, team: Team):
+    def remove_team(self, team: Team):
         if not isinstance(team, Team):
             raise ValueError("El equipo debe ser de tipo Team")
         if not self.contains_team(team):
@@ -218,10 +237,9 @@ class Tournament:
         return [t for t in self.__tournament_teams if t.state == TournamentTeamState.RETIRATED]
     
     # METODOS DE ACTUALIZACIÓN
-    def update_tournament_rules(self, tournament_rule: TournamentRule):
+    def update_tournament_rules(self, tournament_rule: TournamentRule, tournament_config: ConfigTournament, tournament_evaluation: TournamentEvaluation):
         if self.__state != TournamentState.DRAFT:
             raise ValueError("El torneo no está en estado de borrador")
-        # Conservar el id y created_at originales para no romper las FKs en la DB
         self.__tournament_rule = TournamentRule(
             id=self.__tournament_rule.id,
             min_members=tournament_rule.min_members,
@@ -234,27 +252,14 @@ class Tournament:
             access_type=tournament_rule.access_type,
             criterias=list(tournament_rule.criterias)
         )
+        self.__config_tournament = tournament_config
+        self.__tournament_evaluation = tournament_evaluation
 
     def update_state(self, new_state: TournamentState):
         if self.validate_state_transition(new_state):
             self.__state = new_state
 
-    # METODOS ESPECIFICOS DE FASE DE INSCRIPCION
-    def register_team(self, team: Team):
-        if self.__state != TournamentState.REGISTRATION_OPEN:
-            raise ValueError("El torneo no está en estado de inscripción")
-        if self.contains_team(team):
-            raise ValueError("El equipo ya está inscrito en el torneo")
-        self.__tournament_rule.validate_team_rules(team)
-        new_tournament_team = TournamentTeam(id=team.id, team=team, tournament_id=self.id, tournament_rule=self.__tournament_rule, state=TournamentTeamState.PENDING)
-        self.__add_team(new_tournament_team)
-
-    def unregister_team(self, team: Team):
-        if self.__state != TournamentState.REGISTRATION_OPEN:
-            raise ValueError("El torneo no está en estado de inscripción")
-        if not self.contains_team(team):
-            raise ValueError("El equipo no está inscrito en el torneo")
-        self.__remove_team(team)
+    
 
     # METODOS DE VALIDACION DE FLUJO DE ESTADO
     def validate_state_transition(self, new_state: TournamentState)->bool:
@@ -308,17 +313,46 @@ class Tournament:
     def to_dict(self) -> dict:
         return {
             "id":              self.id,
-            "name":            self.name,
-            "description":     self.description,
-            "date_start":      self.date_start.isoformat(),
-            "date_end":        self.date_end.isoformat(),
-            "state":           self.state.value,
-            "category":        self.category.value,
-            "creator_user_id": self.creator_user_id,
+            "name":            self.__name,
+            "description":     self.__description,
+            "date_start":      self.__date_start.isoformat(),
+            "date_end":        self.__date_end.isoformat(),
+            "state":           self.__state.value,
+            "category":        self.__category.value,
+            "creator_user_id": self.__creator_user_id,
             "users_tournaments": [{"user_id": m.user_id, "tournament_id": m.tournament_id, "rol": m.rol.value} for m in self.__users_tournaments],
-            "tournament_rule": self.tournament_rule.to_dict(),
+            "tournament_rule": self.__tournament_rule.to_dict(),
+            "tournament_evaluation": self.__tournament_evaluation.to_dict(),
         }
     
-    def valid_all_rules(self)->bool:
-        rules_config = self.__get_validate_config()
+    def valid_for_review(self) -> bool:
+        rules_config = self.get_validate_config()
         self.__config_tournament.validate(**rules_config)
+        self.__tournament_evaluation.valid_criterias()
+        return True
+    
+    def update_tournament_evaluation(self, tournament_evaluation:TournamentEvaluation):
+        if self.__state != TournamentState.DRAFT:
+            raise ValueError("El torneo no está en estado de borrador")
+        self.__tournament_evaluation = tournament_evaluation
+    
+    def rechazed_all_teams_not_accepted(self):
+        for team in self.get_teams_pending:
+            if team.state == TournamentTeamState.PENDING:
+                team.state = TournamentTeamState.REJECTED
+
+    def validate_for_start(self) -> bool:
+        self.__tournament_rule.validate_tournament_teams(self.get_teams_accepted())
+        self.__config_tournament.validate_for_start(**self.__get_tournament_args())
+        return True
+    
+    def __get_tournament_args(self) -> dict:
+        return {
+            "tournament_teams_accepted_count": len(self.get_teams_accepted()),
+        }
+
+    def member_in_tournament(self, member_id: str) -> bool:
+        for t in self.get_teams_accepted():
+            if t.team.contains_member(member_id):
+                return True
+        return False

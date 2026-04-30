@@ -26,7 +26,7 @@ class ReviewTournamentUseCase:
             raise ValueError("El torneo está en un estado que no permite ser revisado.")
         if tournament.state == TournamentState.REGISTRATION_OPEN and tournament.get_teams():
             raise ValueError("El torneo tiene equipos registrados, no puede retroceder de estado.")
-        if not tournament.validate_all_rules():
+        if not tournament.valid_for_review():
             raise ValueError("El torneo tiene configuraciones que no cumplen con las reglas.")
         return True
 

@@ -72,11 +72,26 @@ class TournamentRule:
     def validation_list(self) -> tuple[str]:
         return tuple(self.__validation_list)
 
+    @staticmethod
+    def from_dict(data: dict) -> TournamentRule:
+        return TournamentRule(
+            id=data["id"],
+            min_members=data["min_members"],
+            max_members=data["max_members"],
+            min_teams=data["min_teams"],
+            max_teams=data["max_teams"],
+            created_at=data["created_at"],
+            updated_at=data["updated_at"],
+            validation_list=data["validation_list"],
+            access_type=TournamentAccessType(data["access_type"]),
+            date_start_inscription=data["date_start_inscription"],
+            date_end_inscription=data["date_end_inscription"],
+        )
 
     def touch(self):
         self.__updated_at = datetime.now()
     
-    def validate_team_rules(self, team: Team):
+    def validate_team_rules(self, team: Team) -> bool:
         if len(team.members) < self.__min_members:
             raise ValueError("El equipo no cumple el mínimo de miembros del torneo")
         if len(team.members) > self.__max_members:
@@ -87,7 +102,7 @@ class TournamentRule:
             raise ValueError("El equipo no pertenece a ninguna institución participante")
         return True
     
-    def validate_tournament_teams(self, tournament_teams: list[TournamentTeam]):
+    def validate_tournament_teams(self, tournament_teams: list[TournamentTeam]) -> bool:
         if len(tournament_teams) < self.__min_teams:
             raise ValueError("El torneo no cumple el mínimo de equipos inscritos")
         if len(tournament_teams) > self.__max_teams:

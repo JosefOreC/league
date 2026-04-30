@@ -8,7 +8,7 @@ class TournamentMember:
         if not rol:
             raise ValueError("El usuario debe tener al menos un rol")
         self.__user_id = user_id
-        self.__tournament_id = tournament_id   # ← bug fix: ahora se asigna
+        self.__tournament_id = tournament_id 
         self.__rol = rol
 
     @property
@@ -42,4 +42,4 @@ class TournamentMember:
         return self.user_id == o.user_id
 
     def __hash__(self) -> int:
-        return hash(self.user_id)
+        return hash(self.user_id)

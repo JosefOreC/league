@@ -1,6 +1,7 @@
 from .config_tournament import ConfigTournament
 
 class ConfigRoundRobin(ConfigTournament):
+    NAME = "round_robin"
     def __init__(self, num_rounds: int, point_to_victory: int, point_to_draw: int, 
                 point_to_defeat: int, tie_breaking_criteria: list[str]):
         if not isinstance(num_rounds, int):
@@ -28,11 +29,14 @@ class ConfigRoundRobin(ConfigTournament):
     
     def to_dict(self):
         return {
-            "num_rounds": self.__num_rounds,
-            "point_to_victory": self.__point_to_victory,
-            "point_to_draw": self.__point_to_draw,
-            "point_to_defeat": self.__point_to_defeat,
-            "tie_breaking_criteria": self.__tie_breaking_criteria,
+            "type": self.NAME,
+            "config":{
+                "num_rounds": self.__num_rounds,
+                "point_to_victory": self.__point_to_victory,
+                "point_to_draw": self.__point_to_draw,
+                "point_to_defeat": self.__point_to_defeat,
+                "tie_breaking_criteria": self.__tie_breaking_criteria,
+            }
         }
 
     @property
@@ -54,3 +58,8 @@ class ConfigRoundRobin(ConfigTournament):
     @property
     def tie_breaking_criteria(self) -> list[str]:
         return self.__tie_breaking_criteria
+    
+    def validate_for_start(self, tournament_teams_accepted_count:int, **args) -> bool:
+        if tournament_teams_accepted_count != (2 ** self.__best_of):
+            raise ValueError("El número de equipos debe ser par")
+        return True

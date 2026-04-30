@@ -2,17 +2,17 @@ import uuid
 from datetime import datetime, timezone
 
 class Criteria:
-    def __init__(self, id:str, name:str, description:str, min_value:float, max_value:float, created_at:datetime, updated_at:datetime, value: float):
+    def __init__(self, id:str, name:str, description:str, min_value_qualification:float, max_value_qualification:float, created_at:datetime, updated_at:datetime, value: float):
         self.__id = id
         self.__name = name.upper()
         self.__description = description
-        if min_value > max_value:
+        if min_value_qualification > max_value_qualification:
             raise ValueError("El valor mínimo debe ser menor o igual al valor máximo")
-        self.__min_value = min_value
-        self.__max_value = max_value
+        self.__min_value_qualification = min_value_qualification
+        self.__max_value_qualification = max_value_qualification
         self.__created_at = created_at
         self.__updated_at = updated_at
-        if value > max_value or value < min_value:
+        if value > 1.0 or value < 0.0:
             raise ValueError("El valor debe estar entre 0.0 y 1.0")
         self.__value = value
     
@@ -54,7 +54,17 @@ class Criteria:
             raise ValueError("El valor debe estar entre 0.0 y 1.0")
         self.__value = value
         self.touch()
-    
+
+    def to_dict(self) -> dict[str, any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "min_value": self.min_value,
+            "max_value": self.max_value,
+            "value": self.value,
+        }
+
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, Criteria):
             return False

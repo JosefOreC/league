@@ -2,6 +2,8 @@ from .config_tournament import ConfigTournament
 from ...entities.tournament import Tournament
 
 class ConfigKnockout(ConfigTournament):
+    NAME = "knockout"
+
     def __init__(self, seed_enabled:bool, third_place:bool, best_of:int):
         if not isinstance(self.__seed_enabled, bool):
             raise ValueError("El seed_enabled debe ser un booleano")
@@ -32,10 +34,18 @@ class ConfigKnockout(ConfigTournament):
     
     def to_dict(self):
         return {
-            "seed_enabled": self.__seed_enabled,
-            "third_place": self.__third_place,
-            "best_of": self.__best_of,
+            "type": self.NAME,
+            "config":{
+                "seed_enabled": self.__seed_enabled,
+                "third_place": self.__third_place,
+                "best_of": self.__best_of,
+            }
         }
+
+    def validate_for_start(self, tournament_teams_accepted_count:int, **args) -> bool:
+        if tournament_teams_accepted_count != (2 ** self.__best_of):
+            raise ValueError("El número de equipos debe ser par")
+        return True
     
     @classmethod
     def from_dict(cls, data: dict):
