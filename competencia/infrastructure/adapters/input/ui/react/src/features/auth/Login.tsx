@@ -3,7 +3,6 @@ import { Bot, LogIn, AlertCircle, CheckCircle2, Lock, Eye, EyeOff } from "lucide
 import { useState, useEffect } from "react";
 import { ImageWithFallback } from "../../components/ui/ImageWithFallback";
 import { useAuth } from "../../context/AuthContext";
-import { loginUser } from "../../services/authService";
 import type { FieldError } from "../../types/auth";
 import axios from "axios";
 

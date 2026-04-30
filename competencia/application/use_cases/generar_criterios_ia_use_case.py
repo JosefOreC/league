@@ -31,6 +31,7 @@ class GenerarCriteriosIAUseCase:
         tipo_torneo: str,
         nivel: str | int,
         categoria: str,
+        descripcion: str = "",
     ) -> tuple[str, list[CriterioIA]]:
         """
         Genera y persiste los criterios de evaluación para un torneo.
@@ -48,6 +49,7 @@ class GenerarCriteriosIAUseCase:
             tipo_torneo=tipo,
             nivel=niv,
             categoria=cat,
+            descripcion=descripcion,
         )
         self._repository.save_all(criterios)
         return sesion_ia_id, criterios
@@ -77,8 +79,11 @@ class GenerarCriteriosIAUseCase:
 
     @staticmethod
     def _parse_categoria(value: str) -> Categoria:
+        val = str(value).upper()
+        if val == "EXPLORADOR": val = "PRIMARY"
+        if val == "INNOVADOR":  val = "SECONDARY"
         try:
-            return Categoria(value.upper())
+            return Categoria(val)
         except (ValueError, AttributeError):
             valid = [e.value for e in Categoria]
             raise ValueError(f"categoria inválida. Valores permitidos: {valid}")

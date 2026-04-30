@@ -30,8 +30,6 @@ export interface CreateTournamentRequest {
   descripcion?: string;
   fecha_inicio: string;               // ISO date "YYYY-MM-DD"
   fecha_fin: string;
-  fecha_inicio_inscripcion: string;
-  fecha_fin_inscripcion: string;
   max_equipos: number;
   min_equipos: number;
   tipo_torneo: TipoTorneo;

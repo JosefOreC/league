@@ -118,8 +118,10 @@ class RubricaGenerator(RubricaGeneratorPort):
         tipo_torneo: TipoTorneo,
         nivel: NivelTecnico,
         categoria: Categoria,
+        descripcion: str = "",
     ) -> list[CriterioIA]:
         specs = _TEMPLATES.get((tipo_torneo, nivel), _FALLBACK)
+        specs = self._inyectar_criterios_contextuales(specs, descripcion)
         specs = self._ajustar_por_categoria(specs, categoria)
         specs = self._normalizar_pesos(specs)
 
@@ -142,6 +144,38 @@ class RubricaGenerator(RubricaGeneratorPort):
         return criterios
 
     # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _inyectar_criterios_contextuales(specs: list[_CSpec], descripcion: str) -> list[_CSpec]:
+        """
+        Analiza la descripción en busca de palabras clave para añadir criterios específicos.
+        """
+        if not descripcion:
+            return specs
+        
+        desc_lower = descripcion.lower()
+        nuevos_specs = list(specs)
+        
+        contextos = [
+            (["seguidor", "línea", "linea"], _num("Seguimiento de Línea", "Precisión del robot al seguir el camino trazado.", 25, 0, 100)),
+            (["laberinto", "navega"],        _num("Resolución de Laberinto", "Capacidad de encontrar la salida eficientemente.", 25, 0, 100)),
+            (["velocidad", "carrera"],       _num("Velocidad Máxima", "Capacidad de completar el tramo en el menor tiempo posible.", 20, 0, 300, mayor=False)),
+            (["rescate", "víctima"],         _bool("Rescate de Víctima", "El robot logró identificar y rescatar el objetivo.", 30)),
+            (["sumo", "lucha", "empuje"],    _num("Estrategia de Combate", "Efectividad de los movimientos ofensivos y defensivos.", 30, 0, 10)),
+            (["autónomo", "sensor"],         _num("Uso de Sensores", "Eficiencia en la lectura y respuesta de sensores.", 15, 0, 100)),
+        ]
+        
+        añadidos = 0
+        for keywords, spec in contextos:
+            if any(kw in desc_lower for kw in keywords):
+                # Verificar si ya existe un criterio similar por nombre
+                if not any(spec[0].lower() in s[0].lower() for s in nuevos_specs):
+                    nuevos_specs.append(spec)
+                    añadidos += 1
+            if añadidos >= 2: # Máximo 2 criterios contextuales para no saturar
+                break
+                
+        return nuevos_specs
 
     @staticmethod
     def _ajustar_por_categoria(specs: list[_CSpec], categoria: Categoria) -> list[_CSpec]:

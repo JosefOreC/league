@@ -1,4 +1,4 @@
-import { PlayCircle, Shuffle, Swords, User, Trophy, GitFork } from "lucide-react";
+import { PlayCircle, Shuffle, Swords, Trophy, GitFork } from "lucide-react";
 import { useState } from "react";
 import { generateFixtures } from "../../services/tournamentService";
 import { useParams } from "react-router";

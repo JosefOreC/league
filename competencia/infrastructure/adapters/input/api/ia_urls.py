@@ -1,9 +1,23 @@
 from django.urls import path
-from .ia_views import analizar_torneo, generar_criterios, actualizar_peso_criterio, confirmar_criterios
+from .ia_views import (
+    analizar_torneo,
+    generar_criterios,
+    actualizar_peso_criterio,
+    confirmar_criterios,
+    recomendar_dificultad,
+    recomendar_formato,
+    generar_reglas_operativas,
+)
 
 urlpatterns = [
     # HU-IA-01
     path("analizar",                                    analizar_torneo,          name="ia_analizar_torneo"),
+    # HU-IA-02
+    path("recomendar-dificultad",                       recomendar_dificultad,    name="ia_recomendar_dificultad"),
+    # HU-IA-03
+    path("recomendar-formato",                          recomendar_formato,       name="ia_recomendar_formato"),
+    # HU-IA-04
+    path("generar-reglas",                              generar_reglas_operativas, name="ia_generar_reglas"),
     # HU-IA-05
     path("generar-criterios",                           generar_criterios,        name="ia_generar_criterios"),
     path("criterios/<str:criterio_id>",                 actualizar_peso_criterio, name="ia_actualizar_peso"),

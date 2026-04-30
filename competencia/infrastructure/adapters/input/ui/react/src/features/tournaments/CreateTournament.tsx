@@ -11,8 +11,6 @@ interface FormData {
   descripcion: string;
   fecha_inicio: string;
   fecha_fin: string;
-  fecha_inicio_inscripcion: string;
-  fecha_fin_inscripcion: string;
   max_equipos: string;
   min_equipos: string;
   tipo_torneo: TipoTorneo;
@@ -27,8 +25,6 @@ export function CreateTournament() {
     descripcion: "",
     fecha_inicio: "",
     fecha_fin: "",
-    fecha_inicio_inscripcion: "",
-    fecha_fin_inscripcion: "",
     max_equipos: "16",
     min_equipos: "4",
     tipo_torneo: TipoTorneo.KNOCKOUT,
@@ -47,20 +43,33 @@ export function CreateTournament() {
     try {
       const analysis = await analizarTexto(descLibre);
 
-      // Mapeo de categorías de IA a categorías de Torneo
-      let categoriaSugerida = formData.categorias_habilitadas;
-      if (analysis.categoria) {
-        categoriaSugerida = [analysis.categoria];
-      }
+      // La respuesta del backend anida los campos como FieldExtraction { value, confidence, missing }
+      // Debemos extraer .value de cada campo
+      const categoriaValue = analysis.categoria?.value as CategoriaTorneo | null;
+      const tipoTorneoValue = analysis.tipo_torneo_sugerido?.value as TipoTorneo | null;
+      const numEquiposValue = analysis.numero_equipos?.value;
+      const nombreValue = analysis.nombre?.value;
+      const fechaInicioValue = analysis.fecha_inicio?.value;
+      const fechaFinValue = analysis.fecha_fin?.value;
+      const descripcionValue = analysis.descripcion?.value;
 
       setFormData(prev => ({
         ...prev,
-        nombre: prev.nombre || (analysis.intencion_usuario === "CREAR_TORNEO" ? "Nuevo Torneo" : prev.nombre),
-        descripcion: descLibre,
-        max_equipos: analysis.numero_equipos?.toString() || prev.max_equipos,
-        categorias_habilitadas: categoriaSugerida,
-        tipo_torneo: analysis.tipo_torneo_sugerido || prev.tipo_torneo
+        nombre: nombreValue || prev.nombre,
+        descripcion: descripcionValue || descLibre,
+        max_equipos: numEquiposValue ? String(numEquiposValue) : prev.max_equipos,
+        categorias_habilitadas: categoriaValue ? [categoriaValue] : prev.categorias_habilitadas,
+        tipo_torneo: tipoTorneoValue ?? prev.tipo_torneo,
+        fecha_inicio: fechaInicioValue || prev.fecha_inicio,
+        fecha_fin: fechaFinValue || prev.fecha_fin,
       }));
+
+      // Mostrar aviso si el análisis fue ambiguo
+      if (analysis.estado_analisis !== "COMPLETO" && analysis.campos_faltantes?.length > 0) {
+        setGeneralError(
+          `IA completó los campos detectados. Campos no detectados: ${analysis.campos_faltantes.join(", ")}. Por favor complétalos manualmente.`
+        );
+      }
     } catch (err) {
       console.error("Error en análisis IA:", err);
       setGeneralError("No se pudo analizar el texto. Por favor complete manualmente.");
@@ -80,8 +89,6 @@ export function CreateTournament() {
         descripcion: formData.descripcion || undefined,
         fecha_inicio: formData.fecha_inicio,
         fecha_fin: formData.fecha_fin,
-        fecha_inicio_inscripcion: formData.fecha_inicio_inscripcion,
-        fecha_fin_inscripcion: formData.fecha_fin_inscripcion,
         max_equipos: Number(formData.max_equipos),
         min_equipos: Number(formData.min_equipos),
         tipo_torneo: formData.tipo_torneo,
@@ -220,26 +227,7 @@ export function CreateTournament() {
                     className="flex h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-slate-700">Inicio Inscripciones</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.fecha_inicio_inscripcion}
-                    onChange={(e) => setFormData({ ...formData, fecha_inicio_inscripcion: e.target.value })}
-                    className="flex h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-slate-700">Cierre Inscripciones</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.fecha_fin_inscripcion}
-                    onChange={(e) => setFormData({ ...formData, fecha_fin_inscripcion: e.target.value })}
-                    className="flex h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+
               </div>
             </section>
 

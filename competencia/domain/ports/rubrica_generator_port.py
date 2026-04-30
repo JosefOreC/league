@@ -19,4 +19,5 @@ class RubricaGeneratorPort(ABC):
         tipo_torneo: TipoTorneo,
         nivel: NivelTecnico,
         categoria: Categoria,
+        descripcion: str = "",
     ) -> list[CriterioIA]: ...

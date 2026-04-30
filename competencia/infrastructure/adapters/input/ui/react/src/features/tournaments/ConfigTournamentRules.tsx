@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { ArrowLeft, Save, Send, Plus, Trash2, AlertCircle, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, Send, Plus, Trash2, AlertCircle, Loader2, CheckCircle, BrainCircuit } from "lucide-react";
 import { getTournamentById, configTournamentRules, reviewTournament } from "../../services/tournamentService";
+import { generarCriteriosEvaluacion } from "../../services/aiService";
 import {
   ConfigKnockout as KOConfig,
   ConfigRoundRobin as RRConfig,
@@ -43,12 +44,13 @@ export function ConfigTournamentRules() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
 
   // Datos generales (solo lectura)
-  const [meta, setMeta] = useState({ name: "", category: "", state: "", date_start: "", date_end: "" });
+  const [meta, setMeta] = useState({ name: "", category: "", state: "", date_start: "", date_end: "", description: "" });
 
   // Reglas operativas
   const [rule, setRule] = useState<RuleForm>({
@@ -75,7 +77,14 @@ export function ConfigTournamentRules() {
       try {
         const t: any = await getTournamentById(tournamentId);
         setIsReadOnly(t.state !== "draft");
-        setMeta({ name: t.name, category: t.category, state: t.state, date_start: t.date_start, date_end: t.date_end });
+        setMeta({
+          name: t.name,
+          category: t.category,
+          state: t.state,
+          date_start: t.date_start,
+          date_end: t.date_end,
+          description: t.description || ""
+        });
 
         const r = t.tournament_rule || {};
         setRule({
@@ -170,6 +179,37 @@ export function ConfigTournamentRules() {
 
   const addInstitution = () => { if (newInstitution.trim()) { setRule(r => ({ ...r, validation_list: [...r.validation_list, newInstitution.trim()] })); setNewInstitution(""); } };
   const removeInstitution = (i: number) => setRule(r => ({ ...r, validation_list: r.validation_list.filter((_, idx) => idx !== i) }));
+
+  const handleAiRecommendCriteria = async () => {
+    if (!tournamentId) return;
+    setError(null);
+    setSuccess(null);
+    setIsAiGenerating(true);
+    try {
+      const result = await generarCriteriosEvaluacion({
+        torneo_id: tournamentId,
+        tipo_torneo: tournamentType.toUpperCase(),
+        nivel: "BASICO", // Por defecto, se puede ajustar
+        categoria: meta.category.toUpperCase(),
+        descripcion: meta.description,
+      });
+
+      const suggestedCriterias = result.criterios.map(c => ({
+        name: c.nombre,
+        description: c.descripcion,
+        min_value: c.valor_minimo ?? 0,
+        max_value: c.valor_maximo ?? 10,
+        value: c.peso_porcentual / 100, // De 0-100 a 0.0-1.0
+      }));
+
+      setCriterias(suggestedCriterias);
+      setSuccess("✨ La IA ha recomendado criterios basados en la descripción del torneo. Revisa los pesos y guarda los cambios.");
+    } catch {
+      setError("Error al obtener recomendaciones de la IA.");
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
 
   // ── UI ────────────────────────────────────────────────────────────────────
 
@@ -355,7 +395,22 @@ export function ConfigTournamentRules() {
       {/* ── SECCIÓN 3: Criterios de Evaluación ── */}
       <div className={sectionCls}>
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <span className="font-semibold text-slate-800 text-sm uppercase tracking-wide">Criterios de Evaluación</span>
+          <div className="flex items-center gap-4">
+            <span className="font-semibold text-slate-800 text-sm uppercase tracking-wide">Criterios de Evaluación</span>
+            {!isReadOnly && (
+              <button
+                onClick={handleAiRecommendCriteria}
+                disabled={isAiGenerating}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold hover:bg-purple-200 transition-colors border border-purple-200"
+              >
+                {isAiGenerating ? (
+                  <><Loader2 size={12} className="animate-spin" /> Sugiriendo...</>
+                ) : (
+                  <><BrainCircuit size={12} /> Recomendar con IA</>
+                )}
+              </button>
+            )}
+          </div>
           <span className={`text-xs font-semibold px-2 py-1 rounded-full ${pesoValido ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
             Suma pesos: {(totalPeso * 100).toFixed(1)}% {pesoValido ? "✓" : "(debe ser 100%)"}
           </span>

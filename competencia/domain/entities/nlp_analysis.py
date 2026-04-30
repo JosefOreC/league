@@ -19,8 +19,12 @@ class NLPAnalysis:
     categoria: FieldExtraction
     nivel_tecnico: FieldExtraction
     tipo_torneo_sugerido: FieldExtraction
-    intencion_usuario: str
-    estado_analisis: EstadoAnalisis
+    nombre: FieldExtraction = field(default_factory=lambda: FieldExtraction(None, 0.0, True))
+    fecha_inicio: FieldExtraction = field(default_factory=lambda: FieldExtraction(None, 0.0, True))
+    fecha_fin: FieldExtraction = field(default_factory=lambda: FieldExtraction(None, 0.0, True))
+    descripcion: FieldExtraction = field(default_factory=lambda: FieldExtraction(None, 0.0, True))
+    intencion_usuario: str = ""
+    estado_analisis: EstadoAnalisis = EstadoAnalisis.AMBIGUO
     campos_faltantes: list[str] = field(default_factory=list)
     advertencias: list[str] = field(default_factory=list)
 
@@ -36,6 +40,10 @@ class NLPAnalysis:
             "categoria":            self.categoria,
             "nivel_tecnico":        self.nivel_tecnico,
             "tipo_torneo_sugerido": self.tipo_torneo_sugerido,
+            "nombre":               self.nombre,
+            "fecha_inicio":         self.fecha_inicio,
+            "fecha_fin":            self.fecha_fin,
+            "descripcion":          self.descripcion,
         }
 
         return {

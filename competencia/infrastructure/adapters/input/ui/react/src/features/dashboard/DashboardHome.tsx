@@ -1,10 +1,6 @@
 import {
   Trophy,
   Users,
-  Swords,
-  Rocket,
-  Clock,
-  ChevronRight,
   TrendingUp,
   Zap,
   BrainCircuit,

@@ -9,6 +9,7 @@ import {
 } from "../types/ai";
 
 // Enviamos un texto descriptivo a la IA para que extraiga los parámetros del torneo
+// Endpoint: POST /api/ia/analizar   Body: { texto }
 export async function analizarTexto(texto: string): Promise<AnalisisIAResponse> {
   const response = await api.post<AnalisisIAResponse>("ia/analizar", { texto });
   return response.data;
@@ -42,6 +43,7 @@ export async function generarCriteriosEvaluacion(payload: {
   tipo_torneo: string;
   nivel: string | number;
   categoria: string;
+  descripcion?: string;
 }): Promise<{ sesion_ia_id: string; criterios: CriterioEvaluacionIA[]; total_pesos: number }> {
   const response = await api.post("ia/generar-criterios", payload);
   return response.data;

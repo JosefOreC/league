@@ -1,5 +1,4 @@
-import { CategoriaTorneo, TipoTorneo, ConfigTorneo, TipoDatoCriterio } from "./tournament";
-import { NivelTecnico } from "./team";
+import { TipoTorneo, ConfigTorneo } from "./tournament";
 
 // Posibles estados del análisis de texto libre por parte de la IA
 export enum EstadoAnalisisIA {
@@ -8,18 +7,28 @@ export enum EstadoAnalisisIA {
   INCOMPLETO = "INCOMPLETO",
 }
 
-// Estructura de la respuesta al analizar el texto libre para crear un torneo
+// Estructura de un campo extraído por la IA (con confianza y flag de faltante)
+export interface FieldExtraction<T> {
+  value: T | null;
+  confidence: number;
+  missing: boolean;
+}
+
+// Estructura REAL de la respuesta del backend (NLPAnalysis.to_dict())
 export interface AnalisisIAResponse {
-  input_texto: string;
-  numero_equipos: number | null;
-  categoria: CategoriaTorneo | null;
-  nivel_tecnico: NivelTecnico | null;
-  tipo_torneo_sugerido: TipoTorneo | null;
-  intencion_usuario: string;
-  nivel_confianza: Record<string, number>;
-  estado_analisis: EstadoAnalisisIA;
-  campos_faltantes: string[];
-  created_at: string;
+  numero_equipos:       FieldExtraction<number>;
+  categoria:            FieldExtraction<string>;
+  nivel_tecnico:        FieldExtraction<string>;
+  tipo_torneo_sugerido: FieldExtraction<string>;
+  nombre:               FieldExtraction<string>;
+  fecha_inicio:         FieldExtraction<string>;
+  fecha_fin:            FieldExtraction<string>;
+  descripcion:          FieldExtraction<string>;
+  nivel_confianza:      Record<string, number>;
+  intencion_usuario:    string;
+  estado_analisis:      EstadoAnalisisIA;
+  campos_faltantes:     string[];
+  advertencias?:        string[];
 }
 
 // Estructura de la respuesta al pedir a la IA que recomiende un nivel de dificultad
@@ -74,20 +83,20 @@ export interface ReglaOperativa {
   valor_editado?: string | null;
 }
 
-// Criterio generado por IA (HU-IA-05)
+// Criterio generado por IA (HU-IA-05) — coincide con CriterioIA.to_dict() del backend
 export interface CriterioEvaluacionIA {
   id: string;
   torneo_id: string;
   sesion_ia_id: string;
   nombre: string;
   descripcion: string;
-  tipo_dato: TipoDatoCriterio;
-  peso_porcentual: number;
-  valor_minimo?: number;
-  valor_maximo?: number;
+  tipo_dato: string;            // "NUMERICO" | "BOOLEANO"
+  peso_porcentual: number;      // 0.01 – 100.00; suma del conjunto = 100
+  valor_minimo: number | null;
+  valor_maximo: number | null;
   mayor_es_mejor: boolean;
   orden: number;
-  estado: EstadoRegla;
+  estado: string;               // "SUGERIDO" | "MODIFICADO" | "ACEPTADO" | "RECHAZADO"
 }
 
 // Respuesta a recomendación (HU-IA-06)

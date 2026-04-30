@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from .views import (
     create_tournament,
     get_tournament_by_id,
@@ -31,4 +31,5 @@ urlpatterns = [
     path('partido/<str:match_id>/resultado/', register_match_result),
     path('torneo/<str:tournament_id>/posiciones/', get_standings),
     path('torneo/<str:tournament_id>/draft/', draft_tournament),
+    path('ia/', include('competencia.infrastructure.adapters.input.api.ia_urls')),
 ]
