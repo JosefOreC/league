@@ -46,7 +46,7 @@ export function CreateTournament() {
     setGeneralError(null);
     try {
       const analysis = await analizarTexto(descLibre);
-      
+
       // Mapeo de categorías de IA a categorías de Torneo
       let categoriaSugerida = formData.categorias_habilitadas;
       if (analysis.categoria) {
@@ -122,7 +122,7 @@ export function CreateTournament() {
             <p className="text-xs text-indigo-700">Describe tu torneo en lenguaje natural y yo extraeré los datos por ti.</p>
           </div>
         </div>
-        
+
         <div className="space-y-3">
           <textarea
             placeholder="Ej: Quiero un torneo de robótica para secundaria con 16 equipos que inicie el próximo mes..."

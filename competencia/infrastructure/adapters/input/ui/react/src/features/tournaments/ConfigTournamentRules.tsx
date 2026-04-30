@@ -40,12 +40,12 @@ export function ConfigTournamentRules() {
   const { id: tournamentId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [isLoading, setIsLoading]       = useState(true);
-  const [isSaving, setIsSaving]         = useState(false);
-  const [isReviewing, setIsReviewing]   = useState(false);
-  const [error, setError]               = useState<string | null>(null);
-  const [success, setSuccess]           = useState<string | null>(null);
-  const [isReadOnly, setIsReadOnly]     = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   // Datos generales (solo lectura)
   const [meta, setMeta] = useState({ name: "", category: "", state: "", date_start: "", date_end: "" });
@@ -82,21 +82,21 @@ export function ConfigTournamentRules() {
           id: r.id,
           min_members: r.min_members ?? 2,
           max_members: r.max_members ?? 5,
-          min_teams:   r.min_teams   ?? 4,
-          max_teams:   r.max_teams   ?? 16,
+          min_teams: r.min_teams ?? 4,
+          max_teams: r.max_teams ?? 16,
           access_type: r.access_type ?? "private",
           validation_list: r.validation_list ?? [],
           date_start_inscription: r.date_start_inscription ? r.date_start_inscription.substring(0, 10) : "",
-          date_end_inscription:   r.date_end_inscription   ? r.date_end_inscription.substring(0, 10)   : "",
+          date_end_inscription: r.date_end_inscription ? r.date_end_inscription.substring(0, 10) : "",
         });
 
         const cfg = t.config_tournament;
         if (cfg) {
           const tp = cfg.type as TournamentType;
           setTournamentType(tp);
-          if (tp === "knockout")   setKoConfig({ seed_enabled: cfg.config.seed_enabled ?? true, third_place: cfg.config.third_place ?? true, best_of: cfg.config.best_of ?? 3 });
+          if (tp === "knockout") setKoConfig({ seed_enabled: cfg.config.seed_enabled ?? true, third_place: cfg.config.third_place ?? true, best_of: cfg.config.best_of ?? 3 });
           if (tp === "round_robin") setRrConfig({ num_rounds: cfg.config.num_rounds ?? 1, point_to_victory: cfg.config.point_to_victory ?? 3, point_to_draw: cfg.config.point_to_draw ?? 1, point_to_defeat: cfg.config.point_to_defeat ?? 0, tie_breaking_criteria: cfg.config.tie_breaking_criteria ?? [] });
-          if (tp === "hybrid")     setHyConfig({ teams_for_group: cfg.config.teams_for_group ?? 4, classified_by_group: cfg.config.classified_by_group ?? 2, num_rounds: cfg.config.num_rounds ?? 1, third_place: cfg.config.third_place ?? false, final_format: cfg.config.final_format ?? "KNOCKOUT" });
+          if (tp === "hybrid") setHyConfig({ teams_for_group: cfg.config.teams_for_group ?? 4, classified_by_group: cfg.config.classified_by_group ?? 2, num_rounds: cfg.config.num_rounds ?? 1, third_place: cfg.config.third_place ?? false, final_format: cfg.config.final_format ?? "KNOCKOUT" });
         }
 
         const ev = t.tournament_evaluation;
@@ -120,7 +120,7 @@ export function ConfigTournamentRules() {
     tournament_rule: {
       ...rule,
       date_start_inscription: rule.date_start_inscription ? `${rule.date_start_inscription}T00:00:00` : null,
-      date_end_inscription:   rule.date_end_inscription   ? `${rule.date_end_inscription}T23:59:59`   : null,
+      date_end_inscription: rule.date_end_inscription ? `${rule.date_end_inscription}T23:59:59` : null,
     },
     tournament_config: {
       type: tournamentType,
@@ -208,8 +208,8 @@ export function ConfigTournamentRules() {
           {[
             { label: "Mín. miembros/equipo", field: "min_members" },
             { label: "Máx. miembros/equipo", field: "max_members" },
-            { label: "Mín. equipos",         field: "min_teams"   },
-            { label: "Máx. equipos",         field: "max_teams"   },
+            { label: "Mín. equipos", field: "min_teams" },
+            { label: "Máx. equipos", field: "max_teams" },
           ].map(({ label, field }) => (
             <div key={field} className="space-y-1">
               <label className="text-sm font-medium text-slate-700">{label}</label>
@@ -305,9 +305,9 @@ export function ConfigTournamentRules() {
             <div className="grid grid-cols-2 gap-4">
               {([
                 { label: "Número de vueltas", field: "num_rounds" },
-                { label: "Puntos victoria",   field: "point_to_victory" },
-                { label: "Puntos empate",     field: "point_to_draw" },
-                { label: "Puntos derrota",    field: "point_to_defeat" },
+                { label: "Puntos victoria", field: "point_to_victory" },
+                { label: "Puntos empate", field: "point_to_draw" },
+                { label: "Puntos derrota", field: "point_to_defeat" },
               ] as { label: string; field: keyof RRConfig }[]).map(({ label, field }) => (
                 <div key={field} className="space-y-1">
                   <label className="text-sm font-medium text-slate-700">{label}</label>
@@ -329,9 +329,9 @@ export function ConfigTournamentRules() {
           {tournamentType === "hybrid" && (
             <div className="grid grid-cols-2 gap-4">
               {([
-                { label: "Equipos por grupo",       field: "teams_for_group" },
-                { label: "Clasificados por grupo",  field: "classified_by_group" },
-                { label: "Vueltas en fase grupos",  field: "num_rounds" },
+                { label: "Equipos por grupo", field: "teams_for_group" },
+                { label: "Clasificados por grupo", field: "classified_by_group" },
+                { label: "Vueltas en fase grupos", field: "num_rounds" },
               ] as { label: string; field: keyof HYConfig }[]).map(({ label, field }) => (
                 <div key={field} className="space-y-1">
                   <label className="text-sm font-medium text-slate-700">{label}</label>
