@@ -146,11 +146,12 @@ class User:
         self.__password_hash = password_hash
         self.__touch()
    
-    def verify_password_security(self, password: str)->bool:
+    @staticmethod
+    def verify_password_security(password: str)->bool:
         if not isinstance(password, str) or not password:
             raise ValueError("La contraseña debe ser una cadena no vacía")
-        if len(password) < self.__MIN_PASSWORD_LENGTH:
-            raise ValueError(f"La contraseña debe tener al menos {self.__MIN_PASSWORD_LENGTH} caracteres")
+        if len(password) < User.__MIN_PASSWORD_LENGTH:
+            raise ValueError(f"La contraseña debe tener al menos {User.__MIN_PASSWORD_LENGTH} caracteres")
         if not any(c.isdigit() for c in password):
             raise ValueError("La contraseña debe tener al menos un número")
         if not any(c.isupper() for c in password):
