@@ -22,13 +22,7 @@ from uuid import uuid4
 
 
 class TournamentRepositoryPostgresql(TournamentRepository):
-
-    def __init__(self):
-        pass
-
-    # -------------------------------------------------------------------------
-    # MAPPERS: ORM → DOMINIO
-    # -------------------------------------------------------------------------
+    
 
     @staticmethod
     def _criteria_to_domain(criteria_orm: CriteriaModel) -> Criteria:
@@ -68,33 +62,6 @@ class TournamentRepositoryPostgresql(TournamentRepository):
         )
 
     @staticmethod
-    def _team_to_domain(team_orm) -> Team:
-        from .team_repository import TeamRepositoryPostgresql
-        return TeamRepositoryPostgresql._team_to_domain(team_orm)
-
-    @staticmethod
-    def _tournament_team_to_domain(team_orm) -> TournamentTeam:
-        from ....domain.value_objects.enums.tournament_team_state import TournamentTeamState
-        
-        state_map = {
-            "PENDIENTE": TournamentTeamState.PENDING,
-            "APROBADO": TournamentTeamState.ACCEPTED,
-            "RECHAZADO": TournamentTeamState.REFUSED,
-            "DISQUALIFIED": TournamentTeamState.DISQUALIFIED,
-            "RETIRATED": TournamentTeamState.RETIRATED
-        }
-        
-        team_domain = TournamentRepositoryPostgresql._team_to_domain(team_orm)
-        return TournamentTeam(
-            id=team_orm.id,
-            tournament_id=team_orm.tournament_id,
-            state=state_map.get(team_orm.estado_inscripcion, TournamentTeamState.PENDING),
-            member_in_tournament_func=None, # Will be set by Tournament entity if needed
-            team=team_domain,
-            qualify_score_team=[]
-        )
-
-    @staticmethod
     def _tournament_to_domain(tournament_orm: TournamentModel) -> Tournament:
         rule = TournamentRepositoryPostgresql._rule_to_domain(
             tournament_orm.tournament_rule
@@ -103,7 +70,6 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             TournamentRepositoryPostgresql._member_to_domain(m)
             for m in tournament_orm.tournament_members.all()
         ]
-        
         return Tournament(
             id=tournament_orm.id,
             name=tournament_orm.name,
@@ -115,10 +81,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             creator_user_id=tournament_orm.creator_user_id,
             category=TournamentCategory(tournament_orm.category),
             users_tournaments=members,
-            teams=[
-                TournamentRepositoryPostgresql._tournament_team_to_domain(t)
-                for t in tournament_orm.teams.all()
-            ],
+            teams=[],
             config_tournament=ConfigTournamentFactory.create_config_tournament(
                 tournament_orm.config_tournament.get("type", "knockout"),
                 tournament_orm.config_tournament.get("config", {})
@@ -140,87 +103,155 @@ class TournamentRepositoryPostgresql(TournamentRepository):
         rule = tournament.tournament_rule
 
         # 1. Guardar regla del torneo
-        rule_orm, _ = TournamentRuleModel.objects.update_or_create(
+        rule_orm = TournamentRuleModel(
             id=rule.id,
-            defaults={
-                "min_members": rule.min_members,
-                "max_members": rule.max_members,
-                "min_teams": rule.min_teams,
-                "max_teams": rule.max_teams,
-                "access_type": rule.access_type.value,
-                "validation_list": list(rule.validation_list),
-                "created_at": rule.created_at,
-                "updated_at": rule.updated_at,
-                "date_start_inscription": rule.date_start_inscription,
-                "date_end_inscription": rule.date_end_inscription,
-            }
+            min_members=rule.min_members,
+            max_members=rule.max_members,
+            min_teams=rule.min_teams,
+            max_teams=rule.max_teams,
+            access_type=rule.access_type.value,
+            validation_list=list(rule.validation_list),
+            created_at=rule.created_at,
+            updated_at=rule.updated_at,
+            date_start_inscription=rule.date_start_inscription,
+            date_end_inscription=rule.date_end_inscription,
         )
+        rule_orm.save()
 
-        # 2. Guardar el torneo
-        tournament_orm, _ = TournamentModel.objects.update_or_create(
-            id=tournament.id,
-            defaults={
-                "name": tournament.name,
-                "description": tournament.description,
-                "date_start": tournament.date_start,
-                "date_end": tournament.date_end,
-                "state": tournament.state.value,
-                "category": tournament.category.value,
-                "creator_user_id": tournament.creator_user_id,
-                "tournament_rule": rule_orm,
-                "config_tournament": tournament.config_tournament.to_dict() if tournament.config_tournament else {},
-            }
-        )
-
-        # 3. Guardar members del torneo
+        # 2. Guardar members del torneo
         member_orms = []
         for member in tournament.users_tournaments:
-            m_orm, _ = TournamentMemberModel.objects.update_or_create(
+            member_orm = TournamentMemberModel.objects.create(
+                id=str(uuid4()),
                 user_id=member.user_id,
                 tournament_id=tournament.id,
-                defaults={
-                    "id": str(uuid4()) if not hasattr(member, 'id') else member.id,
-                    "rol": member.rol.value,
-                    "created_at": now,
-                    "updated_at": now,
-                }
+                rol=member.rol.value,
+                created_at=now,
+                updated_at=now,
             )
-            member_orms.append(m_orm)
+            member_orms.append(member_orm)
+
+        # 3. Crear el torneo y vincular members (M2M)
+        tournament_orm = TournamentModel.objects.create(
+            id=tournament.id,
+            name=tournament.name,
+            description=tournament.description,
+            date_start=tournament.date_start,
+            date_end=tournament.date_end,
+            state=tournament.state.value,
+            category=tournament.category.value,
+            creator_user_id=tournament.creator_user_id,
+            tournament_rule=rule_orm,
+            config_tournament=tournament.config_tournament.to_dict() if tournament.config_tournament else {},
+        )
         tournament_orm.tournament_members.set(member_orms)
 
-        # 4. Guardar criterias
+        # 4. Guardar criterias en la tabla
         if tournament.tournament_evaluation:
             for criteria in tournament.tournament_evaluation.criterias:
-                CriteriaModel.objects.update_or_create(
+                CriteriaModel.objects.create(
                     id=criteria.id,
-                    defaults={
-                        "name": criteria.name,
-                        "description": criteria.description,
-                        "value": criteria.value,
-                        "min_value_qualification": criteria.min_value_qualification,
-                        "max_value_qualification": criteria.max_value_qualification,
-                        "created_at": criteria.created_at,
-                        "updated_at": criteria.updated_at,
-                        "tournament": tournament_orm
-                    }
+                    name=criteria.name,
+                    description=criteria.description,
+                    value=criteria.value,
+                    min_value_qualification=criteria.min_value_qualification,
+                    max_value_qualification=criteria.max_value_qualification,
+                    created_at=criteria.created_at,
+                    updated_at=criteria.updated_at,
+                    tournament=tournament_orm
                 )
 
-        # 5. Sincronizar equipos (TournamentTeams)
-        # Nota: TeamModel en DB es el equivalente a TournamentTeam + Team en dominio
-        from .team_repository import TeamRepositoryPostgresql
-        team_repo = TeamRepositoryPostgresql()
-        for tt in tournament.get_teams():
-            # El estado del TournamentTeam se guarda en TeamModel.estado_inscripcion
-            # Mapeamos de vuelta si es necesario antes de guardar
-            tt.team.estado_inscripcion = tt.state.value.upper() 
-            if tt.team.estado_inscripcion == "ACCEPTED": tt.team.estado_inscripcion = "APROBADO"
-            if tt.team.estado_inscripcion == "PENDING": tt.team.estado_inscripcion = "PENDIENTE"
-            if tt.team.estado_inscripcion == "REFUSED": tt.team.estado_inscripcion = "RECHAZADO"
-            
-            team_repo.save(tt.team)
+    def find_by_id(self, id: str) -> Tournament | None:
+        try:
+            tournament_orm = (
+                TournamentModel.objects
+                .select_related("tournament_rule")
+                .prefetch_related("tournament_members", "criterias")
+                .get(pk=id)
+            )
+            return self._tournament_to_domain(tournament_orm)
+        except TournamentModel.DoesNotExist:
+            return None
+
+    def find_all(self) -> list[Tournament]:
+        tournaments_orm = (
+            TournamentModel.objects
+            .select_related("tournament_rule")
+            .prefetch_related("tournament_members", "criterias")
+            .all()
+        )
+        return [self._tournament_to_domain(t) for t in tournaments_orm]
+
+    def find_by_team_id(self, team_id: str) -> list[Tournament]:
+        raise NotImplementedError("Requiere el modelo TournamentTeamModel")
+
+    def delete(self, id: str) -> None:
+        TournamentModel.objects.filter(pk=id).delete()
 
     def update(self, tournament: Tournament) -> None:
-        self.save(tournament) # El método save ya usa update_or_create
+        now = datetime.now()
+        rule = tournament.tournament_rule
+
+        # 1. Actualizar regla
+        TournamentRuleModel.objects.filter(pk=rule.id).update(
+            min_members=rule.min_members,
+            max_members=rule.max_members,
+            min_teams=rule.min_teams,
+            max_teams=rule.max_teams,
+            access_type=rule.access_type.value,
+            validation_list=list(rule.validation_list),
+            updated_at=rule.updated_at,
+            date_start_inscription=rule.date_start_inscription,
+            date_end_inscription=rule.date_end_inscription,
+        )
+
+        # 3. Actualizar torneo
+        TournamentModel.objects.filter(pk=tournament.id).update(
+            name=tournament.name,
+            description=tournament.description,
+            date_start=tournament.date_start,
+            date_end=tournament.date_end,
+            state=tournament.state.value,
+            category=tournament.category.value,
+            creator_user_id=tournament.creator_user_id,
+            config_tournament=tournament.config_tournament.to_dict() if tournament.config_tournament else {},
+        )
+
+        # Sincronizar criterias: borrar antiguos y crear nuevos
+        tournament_orm = TournamentModel.objects.get(pk=tournament.id)
+        tournament_orm.criterias.all().delete()
+        if tournament.tournament_evaluation:
+            for criteria in tournament.tournament_evaluation.criterias:
+                CriteriaModel.objects.create(
+                    id=criteria.id,
+                    name=criteria.name,
+                    description=criteria.description,
+                    value=criteria.value,
+                    created_at=criteria.created_at,
+                    updated_at=criteria.updated_at,
+                    tournament=tournament_orm
+                )
+
+        # 4. Sincronizar members M2M: borrar los huérfanos y re-crear
+        tournament_orm = TournamentModel.objects.get(pk=tournament.id)
+        old_member_ids = list(
+            tournament_orm.tournament_members.values_list("id", flat=True)
+        )
+        tournament_orm.tournament_members.clear()
+        TournamentMemberModel.objects.filter(id__in=old_member_ids).delete()
+
+        new_member_orms = []
+        for member in tournament.users_tournaments:
+            member_orm = TournamentMemberModel.objects.create(
+                id=str(uuid4()),
+                user_id=member.user_id,
+                tournament_id=tournament.id,
+                rol=member.rol.value,
+                created_at=now,
+                updated_at=now,
+            )
+            new_member_orms.append(member_orm)
+        tournament_orm.tournament_members.set(new_member_orms)
 
     def find_by_name(self, name: str) -> list[Tournament] | None:
         tournaments_orm = (
@@ -243,44 +274,3 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             return self._rule_to_domain(tournament_orm.tournament_rule)
         except TournamentModel.DoesNotExist:
             return None
-
-    def find_by_id(self, tournament_id: str) -> Tournament | None:
-        try:
-            tournament_orm = (
-                TournamentModel.objects
-                .select_related("tournament_rule")
-                .prefetch_related("tournament_members")
-                .get(pk=tournament_id)
-            )
-            return self._tournament_to_domain(tournament_orm)
-        except TournamentModel.DoesNotExist:
-            return None
-    
-    def find_all(self) -> list[Tournament] | None:
-        tournaments_orm = (
-            TournamentModel.objects
-            .select_related("tournament_rule")
-            .prefetch_related("tournament_members")
-        )
-        if not tournaments_orm.exists():
-            return None
-        return [self._tournament_to_domain(t) for t in tournaments_orm]
-    
-    def find_by_team_id(self, team_id: str) -> list[Tournament] | None:
-        tournaments_orm = (
-            TournamentModel.objects
-            .select_related("tournament_rule")
-            .prefetch_related("tournament_members")
-            .filter(teams__id=team_id)
-        )
-        if not tournaments_orm.exists():
-            return None
-        return [self._tournament_to_domain(t) for t in tournaments_orm]
-
-    def delete(self, tournament_id: str) -> None:
-        TournamentModel.objects.filter(id=tournament_id).delete()
-    
-    def update_state(self, tournament_id: str, state: TournamentState) -> None:
-        tournament_orm = TournamentModel.objects.get(id=tournament_id)
-        tournament_orm.state = state.value
-        tournament_orm.save()
