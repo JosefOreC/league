@@ -9,11 +9,12 @@ export enum SystemRol {
 
 // Usuario autenticado (extraído del JWT payload)
 export interface User {
-  user_id: string;
+  id?: string;
+  user_id?: string;
   email: string;
   name: string;
   rol: SystemRol;
-  exp: number;
+  exp?: number;
 }
 
 // Body que se envía al backend en POST /api/auth/login

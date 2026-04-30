@@ -43,7 +43,7 @@ export interface Tournament {
   id: string;
   name: string;
   description: string;
-  creator_user_id: string;
+  creator_user_id: string;      // ID of the user who created the tournament (organizador)
   date_start: string;
   date_end: string;
   state: EstadoTorneo;

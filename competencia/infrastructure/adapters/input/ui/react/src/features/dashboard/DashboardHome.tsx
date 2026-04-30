@@ -9,6 +9,8 @@ import {
 import { Link } from "react-router";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ImageWithFallback } from "../../components/ui/ImageWithFallback";
+import { useAuth } from "../../context/AuthContext";
+import { SystemRol } from "../../types/auth";
 
 const data = [
   { name: "Ene", equipos: 10 },
@@ -21,6 +23,9 @@ const data = [
 ];
 
 export function DashboardHome() {
+  const { user } = useAuth();
+  const isParticipant = user?.rol === SystemRol.PARTICIPANTE;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
@@ -28,12 +33,14 @@ export function DashboardHome() {
           Resumen General
         </h1>
         <div className="flex space-x-3">
-          <Link
-            to="/dashboard/torneos/nuevo"
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2"
-          >
-            Nuevo Torneo
-          </Link>
+          {!isParticipant && (
+            <Link
+              to="/dashboard/torneos/nuevo"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2"
+            >
+              Nuevo Torneo
+            </Link>
+          )}
         </div>
       </div>
 

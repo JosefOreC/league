@@ -172,7 +172,6 @@ class ParticipantModel(models.Model):
     rol_en_equipo = models.CharField(max_length=100, blank=True, null=True)
     documento_identidad = models.CharField(max_length=50)
     autorizacion_datos = models.BooleanField()
-    
     class Meta:
         db_table = "competencia_participant"
 

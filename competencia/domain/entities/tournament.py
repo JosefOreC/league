@@ -22,8 +22,7 @@ class Tournament:
                 tournament_rule: TournamentRule, state:TournamentState, creator_user_id, 
                 category: TournamentCategory, users_tournaments: list[TournamentMember],
                 teams: list[TournamentTeam]=None, tournament_type: TournamentType = TournamentType.KNOCKOUT, 
-                config_tournament:ConfigTournament=None, tournament_evaluation:TournamentEvaluation=None,
-                reto_description:str=None):
+                config_tournament:ConfigTournament=None, tournament_evaluation:TournamentEvaluation=None):
         self.__name = name
         self.__description = description
         if date_start > date_end:
@@ -42,7 +41,6 @@ class Tournament:
         if not users_tournaments:
             raise ValueError("El torneo debe tener al menos un usuario")
         self.__users_tournaments = users_tournaments
-        self.__reto_description = reto_description
     
     @classmethod
     def create(
@@ -80,8 +78,7 @@ class Tournament:
             teams=[],
             users_tournaments=users_tournaments,
             config_tournament=config_tournament,
-            tournament_evaluation=tournament_evaluation,
-            reto_description=None
+            tournament_evaluation=tournament_evaluation
         )
 
     @property
@@ -127,10 +124,6 @@ class Tournament:
     @property
     def category(self) -> TournamentCategory:
         return self.__category
-
-    @property
-    def reto_description(self) -> str:
-        return self.__reto_description
 
     @property
     def users_tournaments(self) -> tuple[TournamentMember]:
@@ -249,7 +242,9 @@ class Tournament:
             created_at=self.__tournament_rule.created_at,
             updated_at=datetime.now(),
             validation_list=list(tournament_rule.validation_list),
-            access_type=tournament_rule.access_type
+            access_type=tournament_rule.access_type,
+            date_start_inscription=tournament_rule.date_start_inscription,
+            date_end_inscription=tournament_rule.date_end_inscription
         )
         self.__config_tournament = tournament_config
         self.__tournament_evaluation = tournament_evaluation
@@ -312,7 +307,6 @@ class Tournament:
             "id":              self.id,
             "name":            self.__name,
             "description":     self.__description,
-            "reto_description":self.__reto_description,
             "date_start":      self.__date_start.isoformat(),
             "date_end":        self.__date_end.isoformat(),
             "state":           self.__state.value,

@@ -13,13 +13,18 @@ from .views import (
     generate_fixtures,
     register_match_result,
     get_standings,
-    draft_tournament
+    draft_tournament,
+    get_public_tournament_data,
+    approve_team,
+    reject_team,
+    get_tournament_teams
 )
 
 urlpatterns = [
     path('all/',                            get_all_tournaments),
     path('create/',                         create_tournament),
     path('torneo/<str:tournament_id>/',     get_tournament_by_id),
+    path('torneo/<str:tournament_id>/public/', get_public_tournament_data),
     path('torneo/<str:tournament_id>/rules/', config_tournament_rules),
     path('torneo/<str:tournament_id>/review/', review_tournament),
     path('torneo/<str:tournament_id>/open-registrations/', open_registrations),
@@ -31,5 +36,8 @@ urlpatterns = [
     path('partido/<str:match_id>/resultado/', register_match_result),
     path('torneo/<str:tournament_id>/posiciones/', get_standings),
     path('torneo/<str:tournament_id>/draft/', draft_tournament),
+    path('torneo/<str:tournament_id>/equipos/', get_tournament_teams),
+    path('equipo/<str:team_id>/aprobar/', approve_team),
+    path('equipo/<str:team_id>/rechazar/', reject_team),
     path('ia/', include('competencia.infrastructure.adapters.input.api.ia_urls')),
 ]

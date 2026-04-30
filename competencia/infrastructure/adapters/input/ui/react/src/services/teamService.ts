@@ -11,18 +11,39 @@ export async function registerTeam(
     team: {
       name: data.nombre,
       category: data.categoria,
-      institution_id: data.institucion.id,
       nivel_tecnico_declarado: data.nivel_tecnico_declarado,
-      // Estos IDs deberían venir del contexto de la sesión o ser creados previamente
+      // Enviamos los objetos completos para que el backend pueda crearlos si no existen
+      institution: {
+        name: data.institucion.nombre,
+        type: data.institucion.tipo,
+        city: data.institucion.ciudad,
+        country: data.institucion.pais,
+      },
+      docente_asesor: data.docente_asesor,
       representante_id: data.docente_asesor.id || "", 
-      docente_asesor_id: data.docente_asesor.id || "",
     },
     participants: data.participantes.map(p => ({
       ...p,
-      birth_date: "2000-01-01", // Valor temporal si no viene en el form, ya que el backend lo requiere
+      birth_date: "2000-01-01", 
     }))
   };
 
   const response = await api.post<Equipo>(`competencia/torneo/${torneoId}/inscribir/`, payload);
   return response.data;
 }
+
+export async function getTeamsByTournament(torneoId: string): Promise<Equipo[]> {
+  const response = await api.get<Equipo[]>(`competencia/torneo/${torneoId}/equipos/`);
+  return response.data;
+}
+
+export async function approveTeam(teamId: string): Promise<Equipo> {
+  const response = await api.post<Equipo>(`competencia/equipo/${teamId}/aprobar/`);
+  return response.data;
+}
+
+export async function rejectTeam(teamId: string): Promise<Equipo> {
+  const response = await api.post<Equipo>(`competencia/equipo/${teamId}/rechazar/`);
+  return response.data;
+}
+

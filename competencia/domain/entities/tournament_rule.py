@@ -81,7 +81,21 @@ class TournamentRule:
         return self.__date_end_inscription
 
     @classmethod
-    def from_dict(cls, **data) -> TournamentRule:
+    def from_dict(cls, **data) -> 'TournamentRule':
+        start = data.get("date_start_inscription")
+        if isinstance(start, str):
+            try:
+                start = datetime.fromisoformat(start)
+            except ValueError:
+                pass
+
+        end = data.get("date_end_inscription")
+        if isinstance(end, str):
+            try:
+                end = datetime.fromisoformat(end)
+            except ValueError:
+                pass
+
         return cls(
             id=data.get("id", str(uuid4())),
             min_members=data["min_members"],
@@ -92,8 +106,8 @@ class TournamentRule:
             updated_at=data.get("updated_at", datetime.now()),
             validation_list=data.get("validation_list", []),
             access_type=TournamentAccessType(data["access_type"]),
-            date_start_inscription=data.get("date_start_inscription"),
-            date_end_inscription=data.get("date_end_inscription"),
+            date_start_inscription=start,
+            date_end_inscription=end,
         )
 
     def touch(self):

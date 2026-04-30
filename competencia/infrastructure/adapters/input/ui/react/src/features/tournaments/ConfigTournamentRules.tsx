@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, Save, Send, Plus, Trash2, AlertCircle, Loader2, CheckCircle, BrainCircuit } from "lucide-react";
 import { getTournamentById, configTournamentRules, reviewTournament } from "../../services/tournamentService";
 import { generarCriteriosEvaluacion } from "../../services/aiService";
+import { useAuth } from "../../context/AuthContext";
+import { SystemRol } from "../../types/auth";
 import {
   ConfigKnockout as KOConfig,
   ConfigRoundRobin as RRConfig,
@@ -40,6 +42,13 @@ import axios from "axios";
 export function ConfigTournamentRules() {
   const { id: tournamentId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.rol === SystemRol.PARTICIPANTE) {
+      navigate("/dashboard/torneos", { replace: true });
+    }
+  }, [user, navigate]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

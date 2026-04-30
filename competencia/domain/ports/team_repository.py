@@ -37,3 +37,7 @@ class TeamRepository(ABC):
     @abstractmethod
     def find_by_teacher(self, teacher_id: str) -> list[Team]:
         pass
+
+    @abstractmethod
+    def find_by_tournament(self, tournament_id: str) -> list[Team]:
+        pass

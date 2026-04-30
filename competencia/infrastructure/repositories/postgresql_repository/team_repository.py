@@ -4,6 +4,7 @@ from ....domain.entities.participant import Participant
 from ...adapters.output.models import TeamModel, ParticipantModel
 from uuid import uuid4
 from datetime import datetime
+from django.db import transaction
 
 class TeamRepositoryPostgresql(TeamRepository):
 
@@ -11,14 +12,13 @@ class TeamRepositoryPostgresql(TeamRepository):
     def _participant_to_domain(participant_orm: ParticipantModel) -> Participant:
         return Participant(
             id=participant_orm.id,
-            equipo_id=participant_orm.equipo_id,
             nombres=participant_orm.nombres,
             apellidos=participant_orm.apellidos,
+            documento_identidad=participant_orm.documento_identidad,
             edad=participant_orm.edad,
             grado_academico=participant_orm.grado_academico,
-            documento_identidad=participant_orm.documento_identidad,
-            autorizacion_datos=participant_orm.autorizacion_datos,
-            rol_en_equipo=participant_orm.rol_en_equipo
+            rol_en_equipo=participant_orm.rol_en_equipo,
+            autorizacion_datos=participant_orm.autorizacion_datos
         )
 
     @staticmethod
@@ -29,10 +29,10 @@ class TeamRepositoryPostgresql(TeamRepository):
         ]
         return Team(
             id=team_orm.id,
-            tournament_id=team_orm.torneo_id,
-            name=team_orm.nombre,
-            category=team_orm.categoria,
-            institution_id=team_orm.institucion_id,
+            tournament_id=team_orm.tournament_id,
+            name=team_orm.name,
+            category=team_orm.category,
+            institution_id=team_orm.institution_id,
             nivel_tecnico_declarado=team_orm.nivel_tecnico_declarado,
             representante_id=team_orm.representante_id,
             docente_asesor_id=team_orm.docente_asesor_id,
@@ -41,13 +41,14 @@ class TeamRepositoryPostgresql(TeamRepository):
             participants=participants
         )
 
+    @transaction.atomic
     def save(self, team: Team):
         team_orm = TeamModel.objects.create(
             id=team.id,
-            torneo_id=team.tournament_id,
-            nombre=team.name,
-            categoria=team.category,
-            institucion_id=team.institution_id,
+            tournament_id=team.tournament_id,
+            name=team.name,
+            category=team.category,
+            institution_id=team.institution_id,
             nivel_tecnico_declarado=team.nivel_tecnico_declarado,
             estado_inscripcion=team.estado_inscripcion,
             fecha_inscripcion=team.fecha_inscripcion,
@@ -57,7 +58,7 @@ class TeamRepositoryPostgresql(TeamRepository):
         for p in team.participants:
             ParticipantModel.objects.create(
                 id=p.id,
-                equipo=team_orm,
+                team=team_orm,
                 nombres=p.nombres,
                 apellidos=p.apellidos,
                 edad=p.edad,
@@ -81,10 +82,11 @@ class TeamRepositoryPostgresql(TeamRepository):
     def delete(self, id: str):
         TeamModel.objects.filter(pk=id).delete()
 
+    @transaction.atomic
     def update(self, team: Team):
         TeamModel.objects.filter(pk=team.id).update(
-            nombre=team.name,
-            categoria=team.category,
+            name=team.name,
+            category=team.category,
             estado_inscripcion=team.estado_inscripcion,
             nivel_tecnico_declarado=team.nivel_tecnico_declarado,
             docente_asesor_id=team.docente_asesor_id
@@ -95,7 +97,7 @@ class TeamRepositoryPostgresql(TeamRepository):
         for p in team.participants:
             ParticipantModel.objects.create(
                 id=p.id,
-                equipo=team_orm,
+                team=team_orm,
                 nombres=p.nombres,
                 apellidos=p.apellidos,
                 edad=p.edad,
@@ -106,12 +108,16 @@ class TeamRepositoryPostgresql(TeamRepository):
             )
 
     def find_by_name(self, name: str) -> list[Team] | None:
-        teams_orm = TeamModel.objects.filter(nombre__icontains=name)
+        teams_orm = TeamModel.objects.filter(name__icontains=name)
         return [self._team_to_domain(t) for t in teams_orm]
 
     def find_by_creator_user(self, creator_user_id: str) -> list[Team]:
         # En este modelo, el creador es el representante
         teams_orm = TeamModel.objects.filter(representante_id=creator_user_id)
+        return [self._team_to_domain(t) for t in teams_orm]
+
+    def find_by_tournament(self, tournament_id: str) -> list[Team]:
+        teams_orm = TeamModel.objects.prefetch_related('participants').filter(tournament_id=tournament_id)
         return [self._team_to_domain(t) for t in teams_orm]
 
     def find_by_institution(self, institution_id: str) -> list[Team]:

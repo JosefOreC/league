@@ -62,6 +62,8 @@ class TournamentTeam:
     def add_participant(self, participant: Participant):
         if len(self.__team.participants) + 1 > self.__tournament_rule.max_members:
             raise ValueError("Se excede el máximo de miembros permitido por el torneo")
+        if self.__member_in_tournament_func(participant.documento_identidad):
+            raise ValueError("El participante ya se encuentra en el torneo")
         self.__team.add_participant(participant)
 
     def to_dict(self) -> dict:

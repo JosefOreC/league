@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod
-from ..entities.tournament_team import TournamentTeam
+from ..entities.institution import Institution
 
-class TournamentTeamRepository(ABC):
+class InstitutionRepository(ABC):
     @abstractmethod
-    def save(self, tournament_team: TournamentTeam):
+    def save(self, institution: Institution):
         pass
     
     @abstractmethod
-    def find_by_id(self, id: str) -> TournamentTeam | None:
+    def find_by_id(self, id: str) -> Institution | None:
         pass
     
     @abstractmethod
-    def find_all(self) -> list[TournamentTeam]:
+    def find_all(self) -> list[Institution]:
         pass
     
     @abstractmethod
@@ -19,18 +19,14 @@ class TournamentTeamRepository(ABC):
         pass
     
     @abstractmethod
-    def update(self, tournament_team: TournamentTeam):
+    def update(self, institution: Institution):
         pass
     
     @abstractmethod
-    def find_by_tournament(self, tournament_id: str) -> list[TournamentTeam]:
+    def find_by_name(self, name: str) -> Institution | None:
         pass
     
     @abstractmethod
-    def find_by_team(self, team_id: str) -> list[TournamentTeam]:
-        pass
-    
-    @abstractmethod
-    def find_by_state(self, state: str) -> list[TournamentTeam]:
+    def find_by_city(self, city: str) -> list[Institution]:
         pass
     

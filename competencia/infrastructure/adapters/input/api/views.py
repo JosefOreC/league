@@ -14,12 +14,17 @@ from .....application.use_cases.inscribe_team_use_case import InscribeTeamUseCas
 from .....application.use_cases.generate_fixtures_use_case import GenerateFixturesUseCase
 from .....application.use_cases.register_match_result_use_case import RegisterMatchResultUseCase
 from .....application.use_cases.calculate_standings_use_case import CalculateStandingsUseCase
+from .....application.use_cases.approve_team_use_case import ApproveTeamUseCase
+from .....application.use_cases.reject_team_use_case import RejectTeamUseCase
+from .....application.use_cases.get_teams_by_tournament_use_case import GetTeamsByTournamentUseCase
 
 from .....infrastructure.repositories.postgresql_repository.tournament_repository import TournamentRepositoryPostgresql
 from .....infrastructure.repositories.postgresql_repository.team_repository import TeamRepositoryPostgresql
 from .....infrastructure.repositories.postgresql_repository.match_repository import MatchRepositoryPostgresql
 from .....infrastructure.repositories.postgresql_repository.match_result_repository import MatchResultRepositoryPostgresql
 from .....infrastructure.repositories.postgresql_repository.standing_repository import StandingRepositoryPostgresql
+from .....infrastructure.repositories.postgresql_repository.institution_repository import InstitutionRepositoryPostgresql
+from .....infrastructure.repositories.postgresql_repository.docente_asesor_repository import DocenteAsesorRepositoryPostgresql
 from .....application.use_cases.draft_tournament_use_case import DraftTournamentUseCase
 from authentication.domain.value_objects.enum.system_rol import SystemRol
 from .....domain.value_objects.enums.tournament_category import TournamentCategory
@@ -50,13 +55,22 @@ def _execute_generic_use_case(request, use_case_class, **kwargs):
 
         # Inyección manual de dependencias según el caso de uso
         if use_case_class == InscribeTeamUseCase:
-            use_case = use_case_class(team_repository=team_repo, tournament_repository=repository)
+            inst_repo = InstitutionRepositoryPostgresql()
+            doc_repo = DocenteAsesorRepositoryPostgresql()
+            use_case = use_case_class(
+                team_repository=team_repo, 
+                tournament_repository=repository,
+                institution_repository=inst_repo,
+                docente_repository=doc_repo
+            )
         elif use_case_class == GenerateFixturesUseCase:
             use_case = use_case_class(match_repository=match_repo, tournament_repository=repository)
         elif use_case_class == RegisterMatchResultUseCase:
             use_case = use_case_class(match_repository=match_repo, match_result_repository=result_repo)
         elif use_case_class == CalculateStandingsUseCase:
             use_case = use_case_class(match_repository=match_repo, standing_repository=standing_repo)
+        elif use_case_class in [ApproveTeamUseCase, RejectTeamUseCase, GetTeamsByTournamentUseCase]:
+            use_case = use_case_class(team_repository=team_repo)
         else:
             use_case = use_case_class(tournament_repository=repository, user=user)
         
@@ -130,7 +144,6 @@ def create_tournament(request):
         return Response({"error": "Error interno", "detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
-@auth_required()
 def get_tournament_by_id(request, tournament_id: str):
     repository = TournamentRepositoryPostgresql()
     tournament = repository.find_by_id(tournament_id)
@@ -139,7 +152,7 @@ def get_tournament_by_id(request, tournament_id: str):
     return Response(tournament.to_dict(), status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+@auth_required()
 def get_all_tournaments(request):
     repository = TournamentRepositoryPostgresql()
     tournaments = repository.find_all()
@@ -215,7 +228,53 @@ def register_match_result(request, match_id: str):
     return _execute_generic_use_case(request, RegisterMatchResultUseCase, match_id=match_id, results_data=data.get("results", []))
 
 @api_view(['GET'])
-@auth_required()
 def get_standings(request, tournament_id: str):
     """HU-GT-07: Tabla de posiciones."""
     return _execute_generic_use_case(request, CalculateStandingsUseCase, tournament_id=tournament_id)
+
+@api_view(['GET'])
+def get_public_tournament_data(request, tournament_id: str):
+    """Pantalla pública del torneo: Datos, Equipos, Fixture, Standings"""
+    repository = TournamentRepositoryPostgresql()
+    team_repo = TeamRepositoryPostgresql()
+    match_repo = MatchRepositoryPostgresql()
+    
+    try:
+        tournament = repository.find_by_id(tournament_id)
+        if not tournament:
+            return Response({"error": "Torneo no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+            
+        teams = team_repo.find_by_tournament(tournament_id)
+        matches = match_repo.find_by_tournament(tournament_id)
+        
+        # We can calculate standings directly or just return the data for the frontend to render
+        # Let's call the Use Case for standings
+        standings_response = _execute_generic_use_case(request, CalculateStandingsUseCase, tournament_id=tournament_id)
+        standings_data = standings_response.data if isinstance(standings_response, Response) and standings_response.status_code == 200 else []
+        
+        return Response({
+            "tournament": tournament.to_dict(),
+            "teams": [t.to_dict() for t in teams],
+            "matches": [m.to_dict() for m in matches],
+            "standings": standings_data
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": "Error interno", "detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+def approve_team(request, team_id: str):
+    """Aprobar inscripción de un equipo."""
+    return _execute_generic_use_case(request, ApproveTeamUseCase, team_id=team_id)
+
+@api_view(['POST'])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+def reject_team(request, team_id: str):
+    """Rechazar inscripción de un equipo."""
+    return _execute_generic_use_case(request, RejectTeamUseCase, team_id=team_id)
+
+@api_view(['GET'])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+def get_tournament_teams(request, tournament_id: str):
+    """Listar todos los equipos inscritos en un torneo para administración."""
+    return _execute_generic_use_case(request, GetTeamsByTournamentUseCase, tournament_id=tournament_id)

@@ -52,16 +52,16 @@ export interface Participante {
 // Interfaz principal para el Equipo
 export interface Equipo {
   id: string;
-  torneo_id: string;
-  nombre: string;
-  categoria: string;
-  institucion_id: string;
+  tournament_id: string;
+  name: string;
+  category: string;
+  institution_id: string;
   nivel_tecnico_declarado: NivelTecnico;
   estado_inscripcion: EstadoInscripcion;
   fecha_inscripcion: string;
   representante_id: string;
   docente_asesor_id: string;
-  participantes?: Participante[];
+  participants?: Participante[];
 }
 
 // Formato de los datos que se envían para registrar un nuevo equipo

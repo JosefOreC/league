@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { ArrowLeft, Save, Sparkles, AlertCircle, Bot } from "lucide-react";
 import { TipoTorneo, CategoriaTorneo } from "../../types/tournament";
+import { useAuth } from "../../context/AuthContext";
+import { SystemRol } from "../../types/auth";
 import { createTournament } from "../../services/tournamentService";
 import { analizarTexto } from "../../services/aiService";
 import axios from "axios";
@@ -19,6 +21,13 @@ interface FormData {
 
 export function CreateTournament() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.rol === SystemRol.PARTICIPANTE) {
+      navigate("/dashboard/torneos", { replace: true });
+    }
+  }, [user, navigate]);
 
   const [formData, setFormData] = useState<FormData>({
     nombre: "",
