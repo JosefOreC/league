@@ -8,7 +8,11 @@ from .views import (
     open_registrations,
     close_registrations,
     start_tournament,
-    cancel_tournament
+    cancel_tournament,
+    inscribe_team,
+    generate_fixtures,
+    register_match_result,
+    get_standings
 )
 
 urlpatterns = [
@@ -21,4 +25,8 @@ urlpatterns = [
     path('torneo/<str:tournament_id>/close-registrations/', close_registrations),
     path('torneo/<str:tournament_id>/start/', start_tournament),
     path('torneo/<str:tournament_id>/cancel/', cancel_tournament),
+    path('torneo/<str:tournament_id>/inscribir/', inscribe_team),
+    path('torneo/<str:tournament_id>/generar-fixtures/', generate_fixtures),
+    path('partido/<str:match_id>/resultado/', register_match_result),
+    path('torneo/<str:tournament_id>/posiciones/', get_standings),
 ]

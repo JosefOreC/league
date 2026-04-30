@@ -162,19 +162,28 @@ class Tournament:
         self.__creator_user_id = creator_user_id
 
     # METODOS PRIMITIVOS
-
+    
     def add_team(self, team: Team):
         if not isinstance(team, Team):
-            raise ValueError("El equipo debe ser un equipo de torneo (TournamentTeam)")
-        if len(self.__tournament_teams) >= self.__tournament_rule.max_teams:
-            raise ValueError("El torneo ha alcanzado el número máximo de equipos")
-        new_members = []
-        for user in team.users:
-            if user.id in [member.user_id for member in self.__users_tournaments]:
-                raise ValueError(f"El miembro del equipo {user.name} ya está inscrito en el torneo con otro equipo")
-            new_user_tournament = TournamentMember(user_id=user.id, tournament_id=self.id, rol=TournamentRol.PARTICIPANT)
-            new_members.append(new_user_tournament)
-        team = TournamentTeam(
+            raise ValueError("El equipo debe ser de tipo Team")
+        
+        if self.__state != TournamentState.REGISTRATION_OPEN:
+            raise ValueError("El torneo no está abierto para inscripciones")
+
+        if len(self.get_teams_accepted()) >= self.__tournament_rule.max_teams:
+            raise ValueError("El torneo ha alcanzado el número máximo de equipos aprobados")
+        
+        # Validar reglas de equipo (miembros min/max, institución)
+        self.__tournament_rule.validate_team_rules(team)
+
+        # Validar participante duplicado por DNI en el mismo torneo
+        for tt in self.__tournament_teams:
+            for p_existing in tt.team.participants:
+                for p_new in team.participants:
+                    if p_existing.documento_identidad == p_new.documento_identidad:
+                        raise ValueError(f"El participante con documento {p_new.documento_identidad} ya está inscrito en este torneo")
+
+        tournament_team = TournamentTeam(
             id=str(uuid4()),
             tournament_id=self.id,
             state=TournamentTeamState.PENDING,
@@ -182,20 +191,14 @@ class Tournament:
             team=team,
             qualify_score_team=[]
         )
-        self.__users_tournaments.extend(new_members)
-        self.__tournament_teams.append(team)
+        self.__tournament_teams.append(tournament_team)
 
-    def remove_team(self, team: Team):
-        if not isinstance(team, Team):
-            raise ValueError("El equipo debe ser de tipo Team")
-        if not self.contains_team(team):
-            raise ValueError("El equipo no está inscrito en el torneo")
-        for t in self.__tournament_teams:
-            if t.team.id == team.id:
-                for m in t.members:
-                    self.__users_tournaments.remove(m)
-                self.__tournament_teams.remove(t)
-                break
+    def remove_team(self, team_id: str):
+        for tt in self.__tournament_teams:
+            if tt.team.id == team_id:
+                self.__tournament_teams.remove(tt)
+                return
+        raise ValueError("El equipo no está inscrito en el torneo")
     
     def get_rol_by_user(self, user_id: str) -> TournamentRol | None:
         """Devuelve el rol del usuario en el torneo, o None si no participa."""
@@ -248,8 +251,6 @@ class Tournament:
         if self.validate_state_transition(new_state):
             self.__state = new_state
 
-    
-
     # METODOS DE VALIDACION DE FLUJO DE ESTADO
     def validate_state_transition(self, new_state: TournamentState)->bool:
         valid_transitions = {
@@ -290,14 +291,14 @@ class Tournament:
 
 
     # METODOS DE VERIFICACION
-    def contains_team(self, team: Team) -> bool:
+    def contains_team(self, team_id: str) -> bool:
         for t in self.__tournament_teams:
-            if t.team.id == team.id:
+            if t.team.id == team_id:
                 return True
         return False
     
     def is_full(self) -> bool:
-        return len(self.__tournament_teams) == self.__tournament_rule.max_teams
+        return len(self.get_teams_accepted()) >= self.__tournament_rule.max_teams
     
     def to_dict(self) -> dict:
         return {
@@ -313,6 +314,7 @@ class Tournament:
             "tournament_rule": self.__tournament_rule.to_dict(),
             "tournament_evaluation": self.__tournament_evaluation.to_dict() if self.__tournament_evaluation else None,
             "config_tournament": self.__config_tournament.to_dict() if self.__config_tournament else None,
+            "teams": [t.to_dict() for t in self.__tournament_teams]
         }
     
     def valid_for_review(self) -> bool:
@@ -327,11 +329,15 @@ class Tournament:
         self.__tournament_evaluation = tournament_evaluation
     
     def rechazed_all_teams_not_accepted(self):
-        for team in self.get_teams_pending:
+        for team in self.get_teams_pending():
             if team.state == TournamentTeamState.PENDING:
-                team.state = TournamentTeamState.REJECTED
+                team.state = TournamentTeamState.REFUSED
 
     def validate_for_start(self) -> bool:
+        # HU-GT-04 Scenario 4: Validar equipos con participantes suficientes
+        for tt in self.get_teams_accepted():
+            self.__tournament_rule.validate_team_rules(tt.team)
+            
         self.__tournament_rule.validate_tournament_teams(self.get_teams_accepted())
         self.__config_tournament.validate_for_start(**self.__get_tournament_args())
         return True
@@ -342,8 +348,9 @@ class Tournament:
             "max_teams": self.__tournament_rule.max_teams,
         }
 
-    def member_in_tournament(self, member_id: str) -> bool:
-        for t in self.get_teams_accepted():
-            if t.team.contains_member(member_id):
-                return True
+    def member_in_tournament(self, member_identifier: str) -> bool:
+        for t in self.__tournament_teams:
+            for p in t.team.participants:
+                if p.documento_identidad == member_identifier or p.id == member_identifier:
+                    return True
         return False

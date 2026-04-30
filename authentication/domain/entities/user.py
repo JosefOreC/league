@@ -123,13 +123,22 @@ class User:
     def birth_date(self, birth_date: datetime):
         if not isinstance(birth_date, datetime):
             raise ValueError("La fecha de nacimiento debe ser una fecha")
-        age = self.__calculate_age()
-        if age > self.__MAX_AGE:
-            raise ValueError(f"La edad no puede ser mayor a {self.__MAX_AGE} años")
-        if age < self.__MIN_AGE:
-            raise ValueError(f"La edad no puede ser menor a {self.__MIN_AGE} años")
+        
+        # Guardamos el anterior por si falla la validación
+        old_birth_date = self.__birth_date
         self.__birth_date = birth_date
-        self.__age = age      
+        
+        try:
+            age = self.__calculate_age()
+            if age > self.__MAX_AGE:
+                raise ValueError(f"La edad no puede ser mayor a {self.__MAX_AGE} años")
+            if age < self.__MIN_AGE:
+                raise ValueError(f"La edad no puede ser menor a {self.__MIN_AGE} años")
+            self.__age = age
+        except ValueError:
+            self.__birth_date = old_birth_date
+            raise
+            
         self.__touch()
 
     @password_hash.setter

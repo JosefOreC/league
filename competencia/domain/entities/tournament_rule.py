@@ -100,14 +100,14 @@ class TournamentRule:
         self.__updated_at = datetime.now()
     
     def validate_team_rules(self, team: Team) -> bool:
-        if len(team.members) < self.__min_members:
-            raise ValueError("El equipo no cumple el mínimo de miembros del torneo")
-        if len(team.members) > self.__max_members:
-            raise ValueError("El equipo excede el máximo de miembros del torneo")
+        if len(team.participants) < self.__min_members:
+            raise ValueError(f"El equipo {team.name} requiere mínimo {self.__min_members} participantes")
+        if len(team.participants) > self.__max_members:
+            raise ValueError(f"El equipo {team.name} excede el máximo de {self.__max_members} participantes")
         if self.__access_type == TournamentAccessType.PUBLIC:
             return True
         if team.institution_id not in self.__validation_list:
-            raise ValueError("El equipo no pertenece a ninguna institución participante")
+            raise ValueError("La institución del equipo no está habilitada para este torneo")
         return True
     
     def validate_tournament_teams(self, tournament_teams: list[TournamentTeam]) -> bool:

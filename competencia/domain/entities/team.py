@@ -1,145 +1,86 @@
-from .user import User
-from authentication.domain.value_objects.enum.system_rol import SystemRol
-from authentication.domain.value_objects.enum.user_state import UserState
+from uuid import uuid4
+from datetime import datetime
+from .participant import Participant
 
 class Team:
-    def __init__(self, id:str, name:str, creator_user:User, teacher:User, institution_id:str, members:list[User], leader: User = None):
+    def __init__(self, id: str, tournament_id: str, name: str, category: str, 
+                 institution_id: str, nivel_tecnico_declarado: str, 
+                 representante_id: str, docente_asesor_id: str, 
+                 estado_inscripcion: str = "PENDIENTE", 
+                 fecha_inscripcion: datetime = None,
+                 participants: list[Participant] = None):
         self.__id = id
-        if not isinstance(name, str) or not name or len(name) < 3:
-            raise ValueError("El nombre debe tener al menos 3 caracteres")
+        self.__tournament_id = tournament_id
         self.__name = name
-
-        if not isinstance(institution_id, str) or not institution_id:
-            raise ValueError("La institución debe ser una institución")
+        self.__category = category # PRIMARY | SECONDARY
         self.__institution_id = institution_id
-
-        self.__members = []
-        if not isinstance(creator_user, User) or creator_user.rol not in [SystemRol.MANAGER, SystemRol.ADMIN]:
-            raise ValueError("El creador debe ser un usuario admin o manager")
-        self.__creator_user = creator_user
-        
-        self.__validate_teacher(teacher)
-        self.__teacher = teacher
-
-        if len(members) < 1:
-            raise ValueError("El equipo debe tener al menos 1 miembro")
-        for member in members:
-            self.add_member(member)
-        
-        self.__leader = None
-        if leader is not None:
-            self.__validate_leader(leader)
-            self.__leader = leader
-    
-    @property
-    def id(self) -> str:
-        return self.__id
-    
-    @property
-    def name(self) -> str:
-        return self.__name
-    
-    @property
-    def creator_user(self) -> User:
-        return self.__creator_user
-    
-    @property
-    def members(self) -> tuple[User]:
-        return tuple(self.__members)
-    
-    @property
-    def leader(self) -> User:
-        return self.__leader
-    
-    @property
-    def institution_id(self) -> str:
-        return self.__institution_id
+        self.__nivel_tecnico_declarado = nivel_tecnico_declarado
+        self.__estado_inscripcion = estado_inscripcion
+        self.__fecha_inscripcion = fecha_inscripcion or datetime.now()
+        self.__representante_id = representante_id
+        self.__docente_asesor_id = docente_asesor_id
+        self.__participants = participants or []
 
     @property
-    def teacher(self) -> User:
-        return self.__teacher
+    def id(self) -> str: return self.__id
+    @property
+    def tournament_id(self) -> str: return self.__tournament_id
+    @property
+    def name(self) -> str: return self.__name
+    @property
+    def category(self) -> str: return self.__category
+    @property
+    def institution_id(self) -> str: return self.__institution_id
+    @property
+    def nivel_tecnico_declarado(self) -> str: return self.__nivel_tecnico_declarado
+    @property
+    def estado_inscripcion(self) -> str: return self.__estado_inscripcion
+    @property
+    def fecha_inscripcion(self) -> datetime: return self.__fecha_inscripcion
+    @property
+    def representante_id(self) -> str: return self.__representante_id
+    @property
+    def docente_asesor_id(self) -> str: return self.__docente_asesor_id
+    @property
+    def participants(self) -> tuple[Participant]: return tuple(self.__participants)
 
-    @name.setter
-    def name(self, name: str):
-        if not isinstance(name, str) or not name:
-            raise ValueError("El nombre debe ser una cadena no vacía")
-        if len(name) < 3:
-            raise ValueError("El nombre debe tener al menos 3 caracteres")
-        self.__name = name
-    
-        
-    def add_member(self, member: User):
-        if self.__validate_member(member):
-            self.__members.append(member)
-    
-    def remove_member(self, member: User):
-        if not self.contains_member(member):
-            raise ValueError("El miembro no está en el equipo")
-        new_members = []
-        
-        for m in self.__members:
-            if m.id != member.id:
-                new_members.append(m)
-        
-        if len(new_members) < 1:
-            raise ValueError("El equipo debe tener al menos 1 miembro")
-        
-        self.__members = new_members
-        if self.__leader and member.id == self.__leader.id:
-            self.__leader = None
+    def add_participant(self, participant: Participant):
+        self.__participants.append(participant)
 
-    def change_leader(self, leader: User):
-        self.__validate_leader(leader)
-        self.__leader = leader
+    def approve(self):
+        self.__estado_inscripcion = "APROBADO"
 
-    def change_teacher(self, teacher: User):
-        self.__validate_teacher(teacher)
-        self.__teacher = teacher
-    
-    def __validate_teacher(self, teacher:User) -> bool:
-        if not isinstance(teacher, User):
-            raise ValueError("El profesor debe ser un usuario")
-        if teacher.rol != SystemRol.COACH:
-            raise ValueError("El profesor debe ser un coach habilitado")
-        if teacher.state != UserState.ACTIVE:
-            raise ValueError("El profesor debe estar activo")
-        return True
+    def reject(self):
+        self.__estado_inscripcion = "RECHAZADO"
 
-    def __validate_member(self, member:User) -> bool:
-        if not isinstance(member, User):
-            raise ValueError("El miembro debe ser un usuario")
-        if member.state != UserState.ACTIVE:
-            raise ValueError(f"El miembro {member.name} se encuentra inhabilitado para participar.")
-        if member.rol != SystemRol.PARTICIPANT:
-            raise ValueError("El miembro debe ser un participante")
-        if member.id == self.__creator_user.id or member.id == self.__teacher.id:
-            raise ValueError("El miembro no puede ser el creador o el profesor")
-        if self.contains_member(member):
-            raise ValueError(f"El miembro {member.name} ya está en el equipo")
-        return True
-    
-    def __validate_leader(self, leader:User) -> bool:
-        if not isinstance(leader, User):
-            raise ValueError("El lider debe ser un usuario")
-        if leader.rol != SystemRol.PARTICIPANT:
-            raise ValueError("El lider debe ser un participante")
-        if leader.state != UserState.ACTIVE:
-            raise ValueError("El lider debe estar activo")
-        if leader.id == self.__creator_user.id or leader.id == self.__teacher.id:
-            raise ValueError("El lider no puede ser el creador o el profesor")
-        if not self.contains_member(leader):
-            raise ValueError(f"El lider {leader.name} no es miembro del equipo")
-        return True
-    
-    def contains_member(self, member: User) -> bool:
-        return any(member.id == m.id for m in self.__members)
-    
-    def has_leader(self) -> bool:
-        return self.__leader is not None
+    def to_dict(self) -> dict:
+        return {
+            "id": self.__id,
+            "tournament_id": self.__tournament_id,
+            "name": self.__name,
+            "category": self.__category,
+            "institution_id": self.__institution_id,
+            "nivel_tecnico_declarado": self.__nivel_tecnico_declarado,
+            "estado_inscripcion": self.__estado_inscripcion,
+            "fecha_inscripcion": self.__fecha_inscripcion.isoformat() if isinstance(self.__fecha_inscripcion, datetime) else self.__fecha_inscripcion,
+            "representante_id": self.__representante_id,
+            "docente_asesor_id": self.__docente_asesor_id,
+            "participants": [p.to_dict() for p in self.__participants]
+        }
 
-    def validate_min_members(self) -> bool:
-        return len(self.__members) >= 1
-
-    def validate_max_members(self) -> bool:
-        return len(self.__members) <= 16
-
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Team':
+        participants_data = data.get("participants", [])
+        return cls(
+            id=data.get("id", str(uuid4())),
+            tournament_id=data["tournament_id"],
+            name=data["name"],
+            category=data["category"],
+            institution_id=data["institution_id"],
+            nivel_tecnico_declarado=data["nivel_tecnico_declarado"],
+            estado_inscripcion=data.get("estado_inscripcion", "PENDIENTE"),
+            fecha_inscripcion=data.get("fecha_inscripcion"),
+            representante_id=data["representante_id"],
+            docente_asesor_id=data["docente_asesor_id"],
+            participants=[Participant.from_dict(p) for p in participants_data]
+        )

@@ -76,3 +76,120 @@ class TournamentModel(models.Model):
     def __str__(self):
         return f"Tournament({self.id} - {self.name})"
 
+class InstitutionModel(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    name = models.CharField(max_length=300)
+    type = models.CharField(max_length=50) # PUBLICA | PRIVADA | CONCERTADA
+    city = models.CharField(max_length=100)
+    country = models.CharField(max_length=100) # ISO 3166-1 alpha-2
+    class Meta:
+        db_table = "competencia_institution"
+
+class DocenteAsesorModel(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    nombre_completo = models.CharField(max_length=200)
+    email = models.EmailField(unique=True)
+    telefono = models.CharField(max_length=20)
+    institution = models.ForeignKey(InstitutionModel, on_delete=models.CASCADE)
+    class Meta:
+        db_table = "competencia_docente_asesor"
+
+class TeamModel(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    tournament = models.ForeignKey(TournamentModel, on_delete=models.CASCADE, related_name="teams")
+    name = models.CharField(max_length=150)
+    category = models.CharField(max_length=50) # PRIMARY | SECONDARY
+    institution = models.ForeignKey(InstitutionModel, on_delete=models.CASCADE)
+    nivel_tecnico_declarado = models.CharField(max_length=50) # BASICO | INTERMEDIO | AVANZADO
+    estado_inscripcion = models.CharField(max_length=50) # PENDIENTE | APROBADO | RECHAZADO
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+    representante_id = models.CharField(max_length=36)
+    docente_asesor = models.ForeignKey(DocenteAsesorModel, on_delete=models.CASCADE)
+    
+    class Meta:
+        db_table = "competencia_team"
+        unique_together = ('tournament', 'name')
+
+class ParticipantModel(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    team = models.ForeignKey(TeamModel, on_delete=models.CASCADE, related_name="participants")
+    nombres = models.CharField(max_length=150)
+    apellidos = models.CharField(max_length=150)
+    edad = models.IntegerField()
+    grado_academico = models.CharField(max_length=50)
+    rol_en_equipo = models.CharField(max_length=100, blank=True, null=True)
+    documento_identidad = models.CharField(max_length=50)
+    autorizacion_datos = models.BooleanField()
+    
+    class Meta:
+        db_table = "competencia_participant"
+
+class GroupModel(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    tournament = models.ForeignKey(TournamentModel, on_delete=models.CASCADE, related_name="groups")
+    name = models.CharField(max_length=50) # Group A, B, C...
+    class Meta:
+        db_table = "competencia_group"
+
+class MatchModel(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    tournament = models.ForeignKey(TournamentModel, on_delete=models.CASCADE, related_name="matches")
+    ronda = models.IntegerField()
+    posicion_en_ronda = models.IntegerField()
+    equipo_local = models.ForeignKey(TeamModel, on_delete=models.SET_NULL, null=True, related_name="matches_as_local")
+    equipo_visitante = models.ForeignKey(TeamModel, on_delete=models.SET_NULL, null=True, related_name="matches_as_visitor")
+    es_bye = models.BooleanField(default=False)
+    es_descanso = models.BooleanField(default=False)
+    grupo = models.ForeignKey(GroupModel, on_delete=models.SET_NULL, null=True, related_name="matches")
+    fase = models.CharField(max_length=50, null=True, blank=True) # GRUPOS | FINAL
+    estado = models.CharField(max_length=50, default="PENDING") # PENDING | IN_PROGRESS | FINISHED | BYE
+    ganador_id = models.CharField(max_length=36, null=True, blank=True)
+    partido_siguiente = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name="partidos_anteriores")
+    fecha_programada = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = "competencia_match"
+
+class MatchResultModel(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    match = models.ForeignKey(MatchModel, on_delete=models.CASCADE, related_name="results")
+    equipo = models.ForeignKey(TeamModel, on_delete=models.CASCADE)
+    criterio = models.ForeignKey(CriteriaModel, on_delete=models.CASCADE)
+    valor_registrado = models.DecimalField(max_digits=10, decimal_places=4)
+    valor_normalizado = models.DecimalField(max_digits=10, decimal_places=4)
+    estado_resultado = models.CharField(max_length=50) # PARTIAL | DEFINITIVE
+    registrado_por = models.CharField(max_length=36)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = "competencia_match_result"
+
+class StandingModel(models.Model):
+    tournament = models.ForeignKey(TournamentModel, on_delete=models.CASCADE, related_name="standings")
+    team = models.ForeignKey(TeamModel, on_delete=models.CASCADE)
+    group = models.ForeignKey(GroupModel, on_delete=models.SET_NULL, null=True, blank=True)
+    partidos_jugados = models.IntegerField(default=0)
+    victorias = models.IntegerField(default=0)
+    empates = models.IntegerField(default=0)
+    derrotas = models.IntegerField(default=0)
+    puntos = models.IntegerField(default=0)
+    puntaje_favor = models.DecimalField(max_digits=12, decimal_places=4, default=0)
+    puntaje_contra = models.DecimalField(max_digits=12, decimal_places=4, default=0)
+    diferencia_puntaje = models.DecimalField(max_digits=12, decimal_places=4, default=0)
+    posicion = models.IntegerField(default=0)
+    
+    class Meta:
+        db_table = "competencia_standing"
+
+class FinalRankingModel(models.Model):
+    tournament = models.ForeignKey(TournamentModel, on_delete=models.CASCADE, related_name="final_ranking")
+    team = models.ForeignKey(TeamModel, on_delete=models.CASCADE)
+    posicion_final = models.IntegerField()
+    puntaje_total_acumulado = models.DecimalField(max_digits=12, decimal_places=4)
+    medalla = models.CharField(max_length=50, null=True, blank=True) # ORO | PLATA | BRONCE
+    mencion_especial = models.CharField(max_length=200, null=True, blank=True)
+    
+    class Meta:
+        db_table = "competencia_final_ranking"
+
