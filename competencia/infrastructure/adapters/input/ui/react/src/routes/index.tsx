@@ -6,6 +6,7 @@ import { DashboardHome } from "../features/dashboard/DashboardHome";
 import { TournamentsList } from "../features/tournaments/TournamentsList";
 import { CreateTournament } from "../features/tournaments/CreateTournament";
 import { ConfigTournamentRules } from "../features/tournaments/ConfigTournamentRules";
+import { RegisterTeam } from "../features/teams/RegisterTeam";
 import { TeamsList } from "../features/teams/TeamsList";
 import { Competitions } from "../features/competitions/Competitions";
 import { Results } from "../features/results/Results";
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
       { path: "torneos", Component: TournamentsList },
       { path: "torneos/nuevo", Component: CreateTournament },
       { path: "torneos/:id/reglas", Component: ConfigTournamentRules },
+      { path: "torneos/:id/inscribir-equipo", Component: RegisterTeam },
       { path: "equipos", Component: TeamsList },
       { path: "competencias", Component: Competitions },
       { path: "resultados", Component: Results },
