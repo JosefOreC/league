@@ -14,6 +14,7 @@ export function CreateTournament() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [generatingDescription, setGeneratingDescription] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,12 +75,44 @@ export function CreateTournament() {
     }
   };
 
-  const generateDescriptionAI = () => {
-    const nombreTorneo = formData.nombre || "este gran torneo";
-    setFormData((prev) => ({
-      ...prev,
-      descripcion: `¡Bienvenidos a ${nombreTorneo}! Un evento diseñado para fomentar la innovación, el trabajo en equipo y las habilidades tecnológicas en la robótica. Únete a nosotros en esta emocionante competencia donde la creatividad y la ingeniería se encuentran.`,
-    }));
+  const generateDescriptionAI = async () => {
+    const nombreTorneo = formData.nombre || "Torneo de Robótica";
+    const contexto = [
+      `Nombre: ${nombreTorneo}`,
+      `Categoría: ${formData.categoria}`,
+      `Equipos esperados: ${formData.limiteEquipos || "no especificado"}`,
+    ].join(" | ");
+
+    setGeneratingDescription(true);
+    try {
+      const res = await fetch("http://localhost:8000/api/ia/analizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: contexto }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert("No se pudo generar con IA: " + JSON.stringify(errorData));
+        return;
+      }
+
+      const analysis = await res.json();
+      const tipo = analysis?.tipo_torneo_sugerido?.value || "competitivo";
+      const nivel = analysis?.nivel_tecnico?.value || "intermedio";
+      const equipos = analysis?.numero_equipos?.value || formData.limiteEquipos || "varios";
+
+      const description = `${nombreTorneo} es una competencia de robótica tipo ${tipo} orientada a nivel ${nivel}. Está diseñada para ${equipos} equipos, promoviendo innovación, trabajo colaborativo y resolución de retos técnicos en un entorno seguro y formativo.`;
+
+      setFormData((prev) => ({
+        ...prev,
+        descripcion: description,
+      }));
+    } catch (error) {
+      alert("Error de red al generar descripción con IA: " + error);
+    } finally {
+      setGeneratingDescription(false);
+    }
   };
 
   return (
@@ -131,10 +164,11 @@ export function CreateTournament() {
                     <button
                       type="button"
                       onClick={generateDescriptionAI}
+                      disabled={generatingDescription}
                       className="inline-flex items-center text-xs font-medium text-purple-700 bg-purple-100 hover:bg-purple-200 px-3 py-1.5 rounded-full transition-colors"
                     >
                       <Sparkles className="h-3 w-3 mr-1.5" />
-                      Generar con IA
+                      {generatingDescription ? "Generando..." : "Generar con IA"}
                     </button>
                   </div>
                   <textarea
