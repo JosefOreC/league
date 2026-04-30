@@ -243,3 +243,44 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             return self._rule_to_domain(tournament_orm.tournament_rule)
         except TournamentModel.DoesNotExist:
             return None
+
+    def find_by_id(self, tournament_id: str) -> Tournament | None:
+        try:
+            tournament_orm = (
+                TournamentModel.objects
+                .select_related("tournament_rule")
+                .prefetch_related("tournament_members")
+                .get(pk=tournament_id)
+            )
+            return self._tournament_to_domain(tournament_orm)
+        except TournamentModel.DoesNotExist:
+            return None
+    
+    def find_all(self) -> list[Tournament] | None:
+        tournaments_orm = (
+            TournamentModel.objects
+            .select_related("tournament_rule")
+            .prefetch_related("tournament_members")
+        )
+        if not tournaments_orm.exists():
+            return None
+        return [self._tournament_to_domain(t) for t in tournaments_orm]
+    
+    def find_by_team_id(self, team_id: str) -> list[Tournament] | None:
+        tournaments_orm = (
+            TournamentModel.objects
+            .select_related("tournament_rule")
+            .prefetch_related("tournament_members")
+            .filter(teams__id=team_id)
+        )
+        if not tournaments_orm.exists():
+            return None
+        return [self._tournament_to_domain(t) for t in tournaments_orm]
+
+    def delete(self, tournament_id: str) -> None:
+        TournamentModel.objects.filter(id=tournament_id).delete()
+    
+    def update_state(self, tournament_id: str, state: TournamentState) -> None:
+        tournament_orm = TournamentModel.objects.get(id=tournament_id)
+        tournament_orm.state = state.value
+        tournament_orm.save()
