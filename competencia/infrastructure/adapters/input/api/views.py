@@ -20,7 +20,7 @@ from .....infrastructure.repositories.postgresql_repository.team_repository impo
 from .....infrastructure.repositories.postgresql_repository.match_repository import MatchRepositoryPostgresql
 from .....infrastructure.repositories.postgresql_repository.match_result_repository import MatchResultRepositoryPostgresql
 from .....infrastructure.repositories.postgresql_repository.standing_repository import StandingRepositoryPostgresql
-
+from .....application.use_cases.draft_tournament_use_case import DraftTournamentUseCase
 from authentication.domain.value_objects.enum.system_rol import SystemRol
 from .....domain.value_objects.enums.tournament_category import TournamentCategory
 from authentication.infrastructure.security.auth_decorator import auth_required
@@ -98,7 +98,18 @@ def create_tournament(request):
     try:
         user_data = getattr(request, "user_data", {})
         user = UserCompentenciaService.dict_to_user(user_data)
-        category = TournamentCategory(data["category"])
+        category_str = str(data["category"]).lower()
+        try:
+            category = TournamentCategory(category_str)
+        except ValueError:
+            # Intentar buscar por nombre si el valor falló
+            try:
+                category = TournamentCategory[category_str.upper()]
+            except KeyError:
+                return Response(
+                    {"error": f"Categoría '{category_str}' no es válida. Use: explorador, innovador, constructor"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         date_start = _parse_datetime(data["date_start"], "date_start")
         date_end = _parse_datetime(data["date_end"], "date_end")
 
@@ -128,7 +139,7 @@ def get_tournament_by_id(request, tournament_id: str):
     return Response(tournament.to_dict(), status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-@auth_required([SystemRol.ADMIN])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
 def get_all_tournaments(request):
     repository = TournamentRepositoryPostgresql()
     tournaments = repository.find_all()
@@ -150,6 +161,11 @@ def config_tournament_rules(request, tournament_id: str):
 @auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
 def review_tournament(request, tournament_id: str):
     return _execute_generic_use_case(request, ReviewTournamentUseCase, tournament_id=tournament_id)
+
+@api_view(['POST'])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+def draft_tournament(request, tournament_id: str):
+    return _execute_generic_use_case(request, DraftTournamentUseCase, tournament_id=tournament_id)
 
 @api_view(['POST'])
 @auth_required([SystemRol.ADMIN, SystemRol.MANAGER])

@@ -1,15 +1,47 @@
 import { Link, useNavigate } from "react-router";
-import { Bot, UserPlus } from "lucide-react";
+import { Bot, UserPlus, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { ImageWithFallback } from "../../components/ui/ImageWithFallback";
+import { registerUser } from "../../services/authService";
 
 export function Register() {
   const navigate = useNavigate();
-  const [role, setRole] = useState("organizer");
+  const [role, setRole] = useState("participant");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Enviamos los datos al backend (rol se ignora o se maneja internamente en el backend)
+      const response = await registerUser({
+        email,
+        password,
+        name,
+        birth_date: birthDate
+      });
+      
+      console.log("Registro exitoso:", response);
+      // Si el registro es exitoso, redirigimos al login con estado exitoso
+      navigate("/", { state: { registered: true } });
+    } catch (err: any) {
+      console.error("Error completo de registro:", err);
+      // Intentamos extraer el mensaje de error específico del backend
+      const backendError = err.response?.data?.error;
+      const detailError = err.response?.data?.detail;
+      
+      setError(backendError || detailError || "Error de conexión con el servidor.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -29,7 +61,14 @@ export function Register() {
             Únete a la plataforma líder en gestión de torneos de robótica
           </p>
 
-          <form className="space-y-6" onSubmit={handleRegister}>
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 flex items-center gap-3 text-red-700 text-sm animate-in fade-in slide-in-from-top-1">
+              <AlertCircle size={20} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form className="space-y-4" onSubmit={handleRegister}>
             <div>
               <label
                 htmlFor="name"
@@ -43,6 +82,8 @@ export function Register() {
                   name="name"
                   type="text"
                   required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Juan Pérez"
                 />
@@ -60,26 +101,60 @@ export function Register() {
                   name="email"
                   type="email"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="juan@ejemplo.com"
                 />
               </div>
 
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-slate-700 mt-4"
-              >
-                Contraseña
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="••••••••"
-                />
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Contraseña
+                  </label>
+                  <div className="mt-1 relative">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="appearance-none block w-full px-3 py-2 pr-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label
+                    htmlFor="birth_date"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Fecha Nac.
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="birth_date"
+                      name="birth_date"
+                      type="date"
+                      required
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -94,19 +169,26 @@ export function Register() {
                 onChange={(e) => setRole(e.target.value)}
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
               >
-                <option value="organizer">Organizador</option>
-                <option value="judge">Juez</option>
-                <option value="team">Representante de Equipo</option>
+                <option value="participant">Participante / Estudiante</option>
+                <option value="coach">Representante / Docente</option>
+                <option value="manager">Organizador de Torneo</option>
               </select>
             </div>
 
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                disabled={isLoading}
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <UserPlus className="mr-2 h-5 w-5" />
-                Crear cuenta
+                {isLoading ? (
+                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-5 w-5" />
+                    Crear cuenta
+                  </>
+                )}
               </button>
             </div>
           </form>

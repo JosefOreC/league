@@ -1,11 +1,41 @@
 import { PlayCircle, Shuffle, Swords, User, Trophy, GitFork } from "lucide-react";
 import { useState } from "react";
+import { generateFixtures } from "../../services/tournamentService";
+import { useParams } from "react-router";
+import axios from "axios";
 
 export function Competitions() {
   const [activeFase, setActiveFase] = useState("Grupos");
 
+  const { id } = useParams<{ id: string }>();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleGenerateFixtures = async () => {
+    if (!id) return;
+    setIsGenerating(true);
+    setError(null);
+    try {
+      await generateFixtures(id);
+      alert("Emparejamientos generados correctamente");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error || "Error al generar emparejamientos");
+      } else {
+        setError("Error de red");
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -15,9 +45,13 @@ export function Competitions() {
             Visualiza y administra las llaves, fases y rondas del torneo activo.
           </p>
         </div>
-        <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2 shadow-sm">
+        <button 
+          onClick={handleGenerateFixtures}
+          disabled={isGenerating}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2 shadow-sm disabled:opacity-50"
+        >
           <Shuffle className="mr-2 h-4 w-4" />
-          Generar emparejamientos
+          {isGenerating ? "Generando..." : "Generar emparejamientos"}
         </button>
       </div>
 

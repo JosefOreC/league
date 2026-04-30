@@ -1,7 +1,9 @@
 import { Bell, Search, User } from "lucide-react";
-import { Link } from "react-router";
+import { useAuth } from "../../context/AuthContext";
 
 export function Header() {
+  const { user } = useAuth();
+
   return (
     <header className="flex-shrink-0 border-b border-slate-200 bg-white">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -32,15 +34,16 @@ export function Header() {
 
           <div className="relative ml-3 border-l border-slate-200 pl-4 flex items-center space-x-3">
             <div className="flex flex-col text-right">
-              <span className="text-sm font-medium text-slate-900">Admin Educativo</span>
-              <span className="text-xs text-slate-500">Organizador - Nivel 3</span>
+              <span className="text-sm font-bold text-slate-900 leading-none mb-1 block">
+                {user?.name || user?.email?.split('@')[0] || "Invitado"}
+              </span>
+              <span className="text-[10px] text-blue-600 font-extrabold uppercase tracking-tight">
+                {user?.rol || "Sin rol"}
+              </span>
             </div>
-            <button className="flex max-w-xs items-center rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-              <span className="sr-only">Abrir menú de usuario</span>
-              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                <User className="h-5 w-5" />
-              </div>
-            </button>
+            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+              <User className="h-5 w-5" />
+            </div>
           </div>
         </div>
       </div>

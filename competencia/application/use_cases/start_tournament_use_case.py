@@ -14,6 +14,7 @@ class StartTournamentUseCase:
         if not tournament:
             raise ValueError("El torneo no existe.")
         self.__valid_permissions(tournament)
+        tournament.validate_for_start()
         tournament.update_state(TournamentState.IN_PROGRESS)
         self.__tournament_repository.update(tournament)
     

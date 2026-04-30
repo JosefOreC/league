@@ -12,7 +12,8 @@ from .views import (
     inscribe_team,
     generate_fixtures,
     register_match_result,
-    get_standings
+    get_standings,
+    draft_tournament
 )
 
 urlpatterns = [
@@ -29,4 +30,5 @@ urlpatterns = [
     path('torneo/<str:tournament_id>/generar-fixtures/', generate_fixtures),
     path('partido/<str:match_id>/resultado/', register_match_result),
     path('torneo/<str:tournament_id>/posiciones/', get_standings),
+    path('torneo/<str:tournament_id>/draft/', draft_tournament),
 ]

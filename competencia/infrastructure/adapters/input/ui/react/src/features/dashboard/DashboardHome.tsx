@@ -1,12 +1,14 @@
 import {
   Trophy,
   Users,
-  Award,
+  Swords,
+  Rocket,
+  Clock,
+  ChevronRight,
   TrendingUp,
+  Zap,
   BrainCircuit,
-  ArrowRight,
-  MoreVertical,
-  Zap
+  ArrowRight
 } from "lucide-react";
 import { Link } from "react-router";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";

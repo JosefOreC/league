@@ -18,4 +18,3 @@ class RegisterUseCase:
         password_hash = self.__password_service.encrypt_password(password=password)
         new_user = User.create_user(email=email, rol=SystemRol.PARTICIPANT, password_hash=password_hash, name=name, birth_date=birth_date)
         self.__user_repository.create(new_user)
-    
