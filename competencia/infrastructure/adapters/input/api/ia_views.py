@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from authentication.domain.value_objects.enum.system_rol import SystemRol
-from .....infrastructure.security.auth_decorator import auth_required
+from authentication.infrastructure.security.auth_decorator import auth_required
 
 from .....application.use_cases.analizar_torneo_use_case import AnalizarTorneoUseCase
 from .....infrastructure.ia.rules_nlp_adapter import RulesBasedNLPAdapter
