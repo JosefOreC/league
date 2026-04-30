@@ -20,7 +20,7 @@ class ReviewTournamentUseCase:
 
     def __valid_permissions(self, tournament: Tournament) -> bool:
         user_tournament = tournament.get_rol_by_user(self.__user.id)
-        if user_tournament is None or user_tournament.rol != TournamentRol.MANAGER:
+        if user_tournament is None or user_tournament != TournamentRol.MANAGER:
             raise PermissionError("El usuario no tiene permisos para realizar esta acción")
         if not tournament.validate_state_transition(TournamentState.IN_REVIEW):
             raise ValueError("El torneo está en un estado que no permite ser revisado.")

@@ -13,6 +13,8 @@ from ...adapters.output.models import (
     CriteriaModel,
     TournamentMemberModel,
 )
+from ....domain.value_objects.config_tournament.config_tournament_factory import ConfigTournamentFactory
+from ....domain.value_objects.config_tournament.tournament_evaluation import TournamentEvaluation
 from datetime import datetime
 from uuid import uuid4
 
@@ -31,7 +33,9 @@ class TournamentRepositoryPostgresql(TournamentRepository):
         return Criteria(
             id=criteria_orm.id,
             name=criteria_orm.name,
-            description="",            # CriteriaModel no almacena description
+            description=criteria_orm.description,
+            min_value_qualification=criteria_orm.min_value_qualification,
+            max_value_qualification=criteria_orm.max_value_qualification,
             created_at=criteria_orm.created_at,
             updated_at=criteria_orm.updated_at,
             value=criteria_orm.value,
@@ -82,6 +86,16 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             category=TournamentCategory(tournament_orm.category),
             users_tournaments=members,
             teams=[],
+            config_tournament=ConfigTournamentFactory.create_config_tournament(
+                tournament_orm.config_tournament.get("type", "knockout"),
+                tournament_orm.config_tournament.get("config", {})
+            ) if tournament_orm.config_tournament else None,
+            tournament_evaluation=TournamentEvaluation(
+                criteria_list=[
+                    TournamentRepositoryPostgresql._criteria_to_domain(c)
+                    for c in tournament_orm.criterias.all()
+                ]
+            ),
         )
 
     # -------------------------------------------------------------------------
@@ -132,15 +146,31 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             category=tournament.category.value,
             creator_user_id=tournament.creator_user_id,
             tournament_rule=rule_orm,
+            config_tournament=tournament.config_tournament.to_dict() if tournament.config_tournament else {},
         )
         tournament_orm.tournament_members.set(member_orms)
+
+        # 4. Guardar criterias en la tabla
+        if tournament.tournament_evaluation:
+            for criteria in tournament.tournament_evaluation.criterias:
+                CriteriaModel.objects.create(
+                    id=criteria.id,
+                    name=criteria.name,
+                    description=criteria.description,
+                    value=criteria.value,
+                    min_value_qualification=criteria.min_value_qualification,
+                    max_value_qualification=criteria.max_value_qualification,
+                    created_at=criteria.created_at,
+                    updated_at=criteria.updated_at,
+                    tournament=tournament_orm
+                )
 
     def find_by_id(self, id: str) -> Tournament | None:
         try:
             tournament_orm = (
                 TournamentModel.objects
                 .select_related("tournament_rule")
-                .prefetch_related("tournament_members")
+                .prefetch_related("tournament_members", "criterias")
                 .get(pk=id)
             )
             return self._tournament_to_domain(tournament_orm)
@@ -151,7 +181,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
         tournaments_orm = (
             TournamentModel.objects
             .select_related("tournament_rule")
-            .prefetch_related("tournament_members")
+            .prefetch_related("tournament_members", "criterias")
             .all()
         )
         return [self._tournament_to_domain(t) for t in tournaments_orm]
@@ -188,7 +218,23 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             state=tournament.state.value,
             category=tournament.category.value,
             creator_user_id=tournament.creator_user_id,
+            config_tournament=tournament.config_tournament.to_dict() if tournament.config_tournament else {},
         )
+
+        # Sincronizar criterias: borrar antiguos y crear nuevos
+        tournament_orm = TournamentModel.objects.get(pk=tournament.id)
+        tournament_orm.criterias.all().delete()
+        if tournament.tournament_evaluation:
+            for criteria in tournament.tournament_evaluation.criterias:
+                CriteriaModel.objects.create(
+                    id=criteria.id,
+                    name=criteria.name,
+                    description=criteria.description,
+                    value=criteria.value,
+                    created_at=criteria.created_at,
+                    updated_at=criteria.updated_at,
+                    tournament=tournament_orm
+                )
 
         # 4. Sincronizar members M2M: borrar los huérfanos y re-crear
         tournament_orm = TournamentModel.objects.get(pk=tournament.id)

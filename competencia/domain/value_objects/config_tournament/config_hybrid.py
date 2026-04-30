@@ -25,7 +25,18 @@ class ConfigHybrid(ConfigTournament):
         self.__final_format = final_format
         self.__third_place = third_place
 
-    def validate(self, max_teams: int, min_teams:int) -> bool:
+    
+    @classmethod
+    def create(cls) -> ConfigHybrid:
+        return cls(
+            teams_for_group=4,
+            classified_by_group=2,
+            num_rounds=1,
+            third_place=False,
+            final_format=TournamentType.KNOCKOUT
+        )
+
+    def validate(self, max_teams: int, **args) -> bool:
         if self.__classified_by_group > self.__teams_for_group:
             raise ValueError("El número de clasificados por grupo debe ser menor o igual al número de equipos por grupo")
         if self.__num_rounds <= 0:

@@ -72,20 +72,28 @@ class TournamentRule:
     def validation_list(self) -> tuple[str]:
         return tuple(self.__validation_list)
 
-    @staticmethod
-    def from_dict(data: dict) -> TournamentRule:
-        return TournamentRule(
-            id=data["id"],
+    @property
+    def date_start_inscription(self) -> datetime | None:
+        return self.__date_start_inscription
+
+    @property
+    def date_end_inscription(self) -> datetime | None:
+        return self.__date_end_inscription
+
+    @classmethod
+    def from_dict(cls, **data) -> TournamentRule:
+        return cls(
+            id=data.get("id", str(uuid4())),
             min_members=data["min_members"],
             max_members=data["max_members"],
             min_teams=data["min_teams"],
             max_teams=data["max_teams"],
-            created_at=data["created_at"],
-            updated_at=data["updated_at"],
-            validation_list=data["validation_list"],
+            created_at=data.get("created_at", datetime.now()),
+            updated_at=data.get("updated_at", datetime.now()),
+            validation_list=data.get("validation_list", []),
             access_type=TournamentAccessType(data["access_type"]),
-            date_start_inscription=data["date_start_inscription"],
-            date_end_inscription=data["date_end_inscription"],
+            date_start_inscription=data.get("date_start_inscription"),
+            date_end_inscription=data.get("date_end_inscription"),
         )
 
     def touch(self):

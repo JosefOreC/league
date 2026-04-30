@@ -23,8 +23,16 @@ class CriteriaModel(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     value = models.FloatField()
+    min_value_qualification = models.FloatField(default=0.0)
+    max_value_qualification = models.FloatField(default=10.0)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
+    tournament = models.ForeignKey(
+        'TournamentModel',
+        on_delete=models.CASCADE,
+        related_name="criterias",
+        null=True
+    )
     class Meta:
         db_table = "competencia_criteria"
     def __str__(self):
@@ -60,6 +68,7 @@ class TournamentModel(models.Model):
         TournamentMemberModel,
         related_name="tournament",
     )
+    config_tournament = models.JSONField(default=dict, blank=True)
 
     class Meta:
         db_table = "competencia_tournament"

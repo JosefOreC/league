@@ -1,3 +1,4 @@
+from competencia.domain.value_objects.config_tournament.config_knockout import ConfigKnockout
 from .tournament_team import TournamentTeam
 from datetime import datetime, timezone
 from ..value_objects.enums.tournament_state import TournamentState
@@ -61,7 +62,7 @@ class Tournament:
         id = str(uuid4())
         tournament_rule = TournamentRule.create(max_teams=max_teams)
         users_tournaments = [TournamentMember(user_id=creator_user_id, tournament_id=id, rol=TournamentRol.MANAGER)]
-        config_tournament = ConfigTournamentFactory.create_config_tournament("knockout", {"max_teams": max_teams})
+        config_tournament = ConfigKnockout.create()
         tournament_evaluation = TournamentEvaluation.create()
 
         return cls(
@@ -161,17 +162,6 @@ class Tournament:
         self.__creator_user_id = creator_user_id
 
     # METODOS PRIMITIVOS
-    
-    def get_validate_config(self):
-        return {
-            TournamentType.KNOCKOUT: {
-                "tournament_teams_count": self.__tournament_rule.max_teams,
-            },
-            TournamentType.ROUND_ROBIN: {},
-            TournamentType.HYBRID: {
-                "max_teams": self.__tournament_rule.max_teams,
-            }
-        }.get(self.__tournament_type.value)
 
     def add_team(self, team: Team):
         if not isinstance(team, Team):
@@ -249,8 +239,7 @@ class Tournament:
             created_at=self.__tournament_rule.created_at,
             updated_at=datetime.now(),
             validation_list=list(tournament_rule.validation_list),
-            access_type=tournament_rule.access_type,
-            criterias=list(tournament_rule.criterias)
+            access_type=tournament_rule.access_type
         )
         self.__config_tournament = tournament_config
         self.__tournament_evaluation = tournament_evaluation
@@ -322,11 +311,12 @@ class Tournament:
             "creator_user_id": self.__creator_user_id,
             "users_tournaments": [{"user_id": m.user_id, "tournament_id": m.tournament_id, "rol": m.rol.value} for m in self.__users_tournaments],
             "tournament_rule": self.__tournament_rule.to_dict(),
-            "tournament_evaluation": self.__tournament_evaluation.to_dict(),
+            "tournament_evaluation": self.__tournament_evaluation.to_dict() if self.__tournament_evaluation else None,
+            "config_tournament": self.__config_tournament.to_dict() if self.__config_tournament else None,
         }
     
     def valid_for_review(self) -> bool:
-        rules_config = self.get_validate_config()
+        rules_config = self.__get_tournament_args()
         self.__config_tournament.validate(**rules_config)
         self.__tournament_evaluation.valid_criterias()
         return True
@@ -349,6 +339,7 @@ class Tournament:
     def __get_tournament_args(self) -> dict:
         return {
             "tournament_teams_accepted_count": len(self.get_teams_accepted()),
+            "max_teams": self.__tournament_rule.max_teams,
         }
 
     def member_in_tournament(self, member_id: str) -> bool:

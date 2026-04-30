@@ -60,10 +60,23 @@ class Criteria:
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            "min_value": self.min_value,
-            "max_value": self.max_value,
+            "min_value": self.__min_value_qualification,
+            "max_value": self.__max_value_qualification,
             "value": self.value,
         }
+
+    @classmethod
+    def from_dict(cls, **data) -> Criteria:
+        return cls(
+            id=data.get("id", str(uuid.uuid4())),
+            name=data["name"],
+            description=data.get("description", ""),
+            min_value_qualification=data["min_value"],
+            max_value_qualification=data["max_value"],
+            created_at=data.get("created_at", datetime.now()),
+            updated_at=data.get("updated_at", datetime.now()),
+            value=data["value"]
+        )
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, Criteria):

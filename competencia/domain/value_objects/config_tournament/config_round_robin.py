@@ -20,7 +20,17 @@ class ConfigRoundRobin(ConfigTournament):
         self.__point_to_defeat = point_to_defeat
         self.__tie_breaking_criteria = tie_breaking_criteria
     
-    def validate(self) -> bool:
+    @classmethod
+    def create(cls):
+        return cls(
+            num_rounds=1,
+            point_to_victory=3,
+            point_to_draw=1,
+            point_to_defeat=0,
+            tie_breaking_criteria=["DIFF_POINTS", "POINTS_FOR"]
+        )
+
+    def validate(self, **args) -> bool:
         if self.__tie_breaking_criteria is None or len(self.__tie_breaking_criteria) == 0:
             raise ValueError("Debe existir al menos un criterio de desempate")
         if self.__point_to_victory <= self.__point_to_draw or self.__point_to_draw <= self.__point_to_defeat:
@@ -60,6 +70,6 @@ class ConfigRoundRobin(ConfigTournament):
         return self.__tie_breaking_criteria
     
     def validate_for_start(self, tournament_teams_accepted_count:int, **args) -> bool:
-        if tournament_teams_accepted_count != (2 ** self.__best_of):
+        if tournament_teams_accepted_count % 2 != 0:
             raise ValueError("El número de equipos debe ser par")
         return True

@@ -5,6 +5,10 @@ class TournamentEvaluation:
     def __init__(self, criteria_list: list[Criteria] = None):
         self.__criterias = criteria_list or []
 
+    @classmethod
+    def create(cls):
+        return cls()
+
     @property
     def criterias(self) -> tuple[Criteria]:
         return tuple(self.__criterias)
@@ -41,6 +45,11 @@ class TournamentEvaluation:
         return {
             "criterias": [criteria.to_dict() for criteria in self.criterias],
         }
+
+    @classmethod
+    def from_dict(cls, **data) -> TournamentEvaluation:
+        criterias = [Criteria.from_dict(**c) for c in data.get("criterias", [])]
+        return cls(criteria_list=criterias)
 
     def valid_criterias(self)->bool:
         if sum(c.value for c in self.__criterias) != 1:

@@ -1,20 +1,25 @@
 from .config_tournament import ConfigTournament
-from ...entities.tournament import Tournament
-
 class ConfigKnockout(ConfigTournament):
     NAME = "knockout"
 
-    def __init__(self, seed_enabled:bool, third_place:bool, best_of:int):
-        if not isinstance(self.__seed_enabled, bool):
+    def __init__(self, seed_enabled:bool, third_place:bool, best_of:int, **kwargs):
+        if not isinstance(seed_enabled, bool):
             raise ValueError("El seed_enabled debe ser un booleano")
-        if not isinstance(self.__third_place, bool):
+        if not isinstance(third_place, bool):
             raise ValueError("El third_place debe ser un booleano")
-        if not isinstance(self.__best_of, int) or not self.__best_of:
+        if not isinstance(best_of, int) or not best_of:
             raise ValueError("El best_of debe ser un entero no vacío")
         self.__seed_enabled = seed_enabled
         self.__third_place = third_place
         self.__best_of = best_of
     
+    @classmethod
+    def create(cls):
+        seed_enabled = True
+        third_place = True
+        best_of = 3
+        return cls(seed_enabled, third_place, best_of)
+
     @property
     def third_place(self) -> bool:
         return self.__third_place
@@ -23,10 +28,10 @@ class ConfigKnockout(ConfigTournament):
     def best_of(self) -> int:
         return self.__best_of
     
-    def validate(self, tournament_teams_count: int) -> bool:
-        if tournament_teams_count < 2:
+    def validate(self, max_teams: int, **args) -> bool:
+        if max_teams < 2:
             raise ValueError("El número de equipos debe ser mayor o igual a 2")
-        if tournament_teams_count % 2 != 0:
+        if max_teams % 2 != 0:
             raise ValueError("El número de equipos debe ser par")
         if self.__best_of <= 0:
             raise ValueError("El best_of debe ser mayor a 0")
