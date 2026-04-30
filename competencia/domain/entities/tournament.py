@@ -323,6 +323,7 @@ class Tournament:
         rules_config = self.__get_tournament_args()
         self.__config_tournament.validate(**rules_config)
         self.__tournament_evaluation.valid_criterias()
+        self.__tournament_rule.validate()
         return True
     
     def update_tournament_evaluation(self, tournament_evaluation:TournamentEvaluation):

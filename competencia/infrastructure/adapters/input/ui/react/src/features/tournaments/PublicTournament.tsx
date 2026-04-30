@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router";
-import { Trophy, Users, Swords, Calendar, Info, Loader2, ArrowLeft } from "lucide-react";
+import { Trophy, Users, Swords, Calendar, Info, Loader2, ArrowLeft, Clock } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
@@ -107,7 +107,17 @@ export function PublicTournament() {
           <div className="flex flex-wrap justify-center gap-4 text-sm font-medium">
              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/10 shadow-inner">
                <Calendar className="h-4 w-4 text-blue-300" />
-               {new Date(tournament.date_start).toLocaleDateString()} - {new Date(tournament.date_end).toLocaleDateString()}
+               Torneo: {new Date(tournament.date_start).toLocaleDateString()} - {new Date(tournament.date_end).toLocaleDateString()}
+             </div>
+             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/10 shadow-inner">
+               <Clock className="h-4 w-4 text-blue-300" />
+               Inscripciones: {tournament.tournament_rule?.date_start_inscription 
+                 ? new Date(tournament.tournament_rule.date_start_inscription).toLocaleDateString()
+                 : "Indefinido"} 
+               {" - "}
+               {tournament.tournament_rule?.date_end_inscription 
+                 ? new Date(tournament.tournament_rule.date_end_inscription).toLocaleDateString()
+                 : "Indefinido"}
              </div>
              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/10 shadow-inner">
                <Users className="h-4 w-4 text-blue-300" />
@@ -169,6 +179,14 @@ export function PublicTournament() {
                         <li className="flex justify-between items-center bg-white p-2 rounded-md shadow-sm border border-slate-100">
                             <span className="text-slate-500">Miembros por equipo:</span> 
                             <span className="font-semibold text-slate-800">{tournament.tournament_rule.min_members} - {tournament.tournament_rule.max_members}</span>
+                        </li>
+                        <li className="flex justify-between items-center bg-white p-2 rounded-md shadow-sm border border-slate-100">
+                            <span className="text-slate-500">Inicio Inscripciones:</span> 
+                            <span className="font-semibold text-slate-800">{tournament.tournament_rule.date_start_inscription ? new Date(tournament.tournament_rule.date_start_inscription).toLocaleDateString() : "Indefinido"}</span>
+                        </li>
+                        <li className="flex justify-between items-center bg-white p-2 rounded-md shadow-sm border border-slate-100">
+                            <span className="text-slate-500">Cierre Inscripciones:</span> 
+                            <span className="font-semibold text-slate-800">{tournament.tournament_rule.date_end_inscription ? new Date(tournament.tournament_rule.date_end_inscription).toLocaleDateString() : "Indefinido"}</span>
                         </li>
                       </>
                     )}

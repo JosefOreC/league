@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getAccessToken, refreshAccessToken, clearTokens } from "./authService";
+import { toast } from "sonner";
 
 // Configuración base de Axios para comunicarse con el servidor (backend)
 
@@ -47,21 +48,49 @@ function processQueue(error: unknown, token: string | null) {
 }
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Show success toasts for mutations only if there's an explicit message
+    const method = response.config.method?.toUpperCase();
+    if (["POST", "PUT", "DELETE", "PATCH"].includes(method || "")) {
+      const isAuthRoute = 
+        response.config.url?.includes("/auth/login") || 
+        response.config.url?.includes("/auth/refresh");
+      
+      if (!isAuthRoute) {
+        // Only show toast if backend returned an explicit message or detail
+        const message = response.data?.message || response.data?.detail;
+        if (message && typeof message === "string") {
+          toast.success(message);
+        }
+      }
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 
-    // Solo intentamos renovar si recibimos un error de autenticación
-    // y si no estamos ya en la ruta de iniciar sesión o renovar token
+    // Handle generic error messages
+    if (error.response) {
+      const status = error.response.status;
+      const data = error.response.data;
+      const method = originalRequest.method?.toUpperCase();
 
+      // Show error toast for everything except specific auth flows handled elsewhere
+      if (status !== 401 || originalRequest.url?.includes("/auth/login")) {
+        const errorMsg = data?.detail || data?.error || data?.message || `Error ${status}: El servidor no pudo procesar la solicitud.`;
+        toast.error(errorMsg);
+      }
+    } else if (error.request) {
+      toast.error("No se pudo conectar con el servidor. Verifica tu conexión.");
+    }
+
+    // Auth refresh logic
     const isAuthRoute =
       originalRequest.url?.includes("/auth/login") ||
       originalRequest.url?.includes("/auth/refresh");
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       if (isRefreshing) {
-        // Si ya estamos renovando el token, ponemos las demás peticiones en espera
-
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         }).then((token) => {

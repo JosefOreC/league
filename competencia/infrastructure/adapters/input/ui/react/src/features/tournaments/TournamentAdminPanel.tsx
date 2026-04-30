@@ -78,11 +78,27 @@ function OverviewTab({ tournament, onAction, processing }: {
       </div>
 
       {/* Metadata grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <InfoCard label="Inicio" value={new Date(tournament.date_start).toLocaleDateString("es-PE", { dateStyle: "long" })} />
-        <InfoCard label="Fin" value={new Date(tournament.date_end).toLocaleDateString("es-PE", { dateStyle: "long" })} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <InfoCard label="Inicio Torneo" value={new Date(tournament.date_start).toLocaleDateString("es-PE", { dateStyle: "long" })} />
+        <InfoCard label="Fin Torneo" value={new Date(tournament.date_end).toLocaleDateString("es-PE", { dateStyle: "long" })} />
+        <InfoCard 
+          label="Inicio Inscripciones" 
+          value={tournament.tournament_rule?.date_start_inscription 
+            ? new Date(tournament.tournament_rule.date_start_inscription).toLocaleDateString("es-PE", { dateStyle: "medium" }) 
+            : "Indefinido"} 
+          className={!tournament.tournament_rule?.date_start_inscription ? "text-slate-400 font-normal italic" : ""}
+        />
+        <InfoCard 
+          label="Cierre Inscripciones" 
+          value={tournament.tournament_rule?.date_end_inscription 
+            ? new Date(tournament.tournament_rule.date_end_inscription).toLocaleDateString("es-PE", { dateStyle: "medium" }) 
+            : "Indefinido"} 
+          className={!tournament.tournament_rule?.date_end_inscription ? "text-slate-400 font-normal italic" : ""}
+        />
         <InfoCard label="Categoría" value={tournament.category} className="capitalize" />
         <InfoCard label="Formato" value={tournament.config_tournament?.type ?? "No configurado"} />
+        <InfoCard label="Mín/Máx Equipos" value={`${tournament.tournament_rule?.min_teams ?? 0} / ${tournament.tournament_rule?.max_teams ?? 0}`} />
+        <InfoCard label="Mín/Máx Miembros" value={`${tournament.tournament_rule?.min_members ?? 0} / ${tournament.tournament_rule?.max_members ?? 0}`} />
         <InfoCard label="Descripción" value={tournament.description || "Sin descripción"} colSpan />
       </div>
 
@@ -131,9 +147,9 @@ function InfoCard({ label, value, className = "", colSpan = false }: {
   label: string; value: string; className?: string; colSpan?: boolean;
 }) {
   return (
-    <div className={`bg-white rounded-xl border border-slate-200 p-5 shadow-sm ${colSpan ? "md:col-span-2" : ""}`}>
-      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-base font-semibold text-slate-800 ${className}`}>{value}</p>
+    <div className={`bg-white rounded-xl border border-slate-200 p-5 shadow-sm ${colSpan ? "md:col-span-2 lg:col-span-4" : ""}`}>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{label}</p>
+      <p className={`text-sm font-semibold text-slate-800 ${className}`}>{value}</p>
     </div>
   );
 }
@@ -166,7 +182,9 @@ function TeamsTab({ tournamentId }: { tournamentId: string }) {
     try {
       await approveTeam(teamId);
       setTeams(prev => prev.map(t => t.id === teamId ? { ...t, estado_inscripcion: EstadoInscripcion.APROBADO } : t));
-    } catch { alert("Error al aprobar."); }
+    } catch { 
+      // Handled by global interceptor
+    }
     finally { setProcessingId(null); }
   };
 
@@ -176,7 +194,9 @@ function TeamsTab({ tournamentId }: { tournamentId: string }) {
     try {
       await rejectTeam(teamId);
       setTeams(prev => prev.map(t => t.id === teamId ? { ...t, estado_inscripcion: EstadoInscripcion.RECHAZADO } : t));
-    } catch { alert("Error al rechazar."); }
+    } catch { 
+      // Handled by global interceptor
+    }
     finally { setProcessingId(null); }
   };
 
@@ -384,8 +404,7 @@ export function TournamentAdminPanel() {
       if (action === "start") await (await import("../../services/tournamentService")).startTournament(tournamentId!);
       await loadTournament();
     } catch (err) {
-      const msg = axios.isAxiosError(err) ? err.response?.data?.error || "Error." : "Error de conexión.";
-      setError(msg);
+      // Handled by global interceptor
     } finally {
       setProcessing(false);
     }

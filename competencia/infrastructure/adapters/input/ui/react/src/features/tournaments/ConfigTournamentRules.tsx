@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Send, Plus, Trash2, AlertCircle, Loader2, CheckCircle,
 import { getTournamentById, configTournamentRules, reviewTournament } from "../../services/tournamentService";
 import { generarCriteriosEvaluacion } from "../../services/aiService";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "sonner";
 import { SystemRol } from "../../types/auth";
 import {
   ConfigKnockout as KOConfig,
@@ -159,24 +160,23 @@ export function ConfigTournamentRules() {
   // ── Acciones ──────────────────────────────────────────────────────────────
 
   const handleSave = async () => {
-    setError(null); setSuccess(null); setIsSaving(true);
+    setIsSaving(true);
     try {
       await configTournamentRules(tournamentId!, buildPayload());
-      setSuccess("Configuración guardada correctamente.");
     } catch (err) {
-      setError(axios.isAxiosError(err) ? err.response?.data?.error ?? "Error al guardar." : "Error de conexión.");
+      // Handled by global interceptor
     } finally { setIsSaving(false); }
   };
 
   const handleReview = async () => {
-    if (!pesoValido) { setError("La suma de los pesos de criterios debe ser exactamente 1.0 (100%)."); return; }
-    setError(null); setSuccess(null); setIsReviewing(true);
+    if (!pesoValido) { toast.error("La suma de los pesos de criterios debe ser exactamente 1.0 (100%)."); return; }
+    setIsReviewing(true);
     try {
       await handleSave();
       await reviewTournament(tournamentId!);
       navigate("/dashboard/torneos");
     } catch (err) {
-      setError(axios.isAxiosError(err) ? err.response?.data?.error ?? "Error al enviar a revisión." : "Error de conexión.");
+      // Handled by global interceptor
     } finally { setIsReviewing(false); }
   };
 

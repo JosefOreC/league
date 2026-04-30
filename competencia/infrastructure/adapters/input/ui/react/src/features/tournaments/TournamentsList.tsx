@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trophy, Rocket, AlertCircle, Loader2, Settings, Eye, Lock, Users } from "lucide-react";
+import { Plus, Trophy, Rocket, AlertCircle, Loader2, Settings, Eye, Lock, Users, Clock } from "lucide-react";
 import { Link } from "react-router";
 import { useRoleGuard } from "../../hooks/useRoleGuard";
 import {
@@ -197,10 +197,20 @@ export function TournamentsList() {
                     </td>
 
                     {/* Dates */}
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                      {new Date(torneo.date_start).toLocaleDateString("es-PE")}
-                      {" "}&rarr;{" "}
-                      {new Date(torneo.date_end).toLocaleDateString("es-PE")}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-slate-900 font-medium">
+                        {new Date(torneo.date_start).toLocaleDateString("es-PE")} &rarr; {new Date(torneo.date_end).toLocaleDateString("es-PE")}
+                      </div>
+                      <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-1">
+                        <Clock size={10} /> 
+                        Inscripciones: {torneo.tournament_rule?.date_start_inscription 
+                          ? new Date(torneo.tournament_rule.date_start_inscription).toLocaleDateString("es-PE")
+                          : "Indefinido"}
+                        {" - "}
+                        {torneo.tournament_rule?.date_end_inscription 
+                          ? new Date(torneo.tournament_rule.date_end_inscription).toLocaleDateString("es-PE")
+                          : "Indefinido"}
+                      </div>
                     </td>
 
                     {/* Category */}

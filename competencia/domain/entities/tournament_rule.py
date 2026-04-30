@@ -131,6 +131,20 @@ class TournamentRule:
             raise ValueError("El torneo excede el máximo de equipos inscritos")
         return True
     
+    def validate(self):
+        if self.__max_members < self.__min_members:
+            raise ValueError("El número máximo de miembros debe ser mayor o igual al número mínimo de miembros")
+        if self.__max_teams < self.__min_teams:
+            raise ValueError("El número máximo de equipos debe ser mayor o igual al número mínimo de equipos")
+        if self.__date_start_inscription is None or self.__date_end_inscription is None:
+            raise ValueError("Debe definir las fechas de inicio y fin de inscripción")
+        if self.__date_start_inscription > self.__date_end_inscription:
+            raise ValueError("La fecha de inicio de inscripción debe ser menor a la fecha de fin de inscripción")
+        if self.__date_end_inscription < datetime.now():
+            raise ValueError("La fecha de fin de inscripción debe ser mayor a la fecha actual")
+        
+
+
     def to_dict(self):
         return {
             "id": self.id,

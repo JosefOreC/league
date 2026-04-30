@@ -119,18 +119,15 @@ export function RegisterTeam() {
         participantes,
       });
 
-      alert("Equipo inscrito exitosamente y pendiente de aprobación.");
-      navigate("/dashboard/equipos");
+      navigate("/dashboard/torneos");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
         const data = err.response?.data;
 
         if (status === 409) {
-          // Error de conflicto: Posiblemente el participante ya se encuentra registrado en este torneo
           setGeneralError(data?.error || "Conflicto al inscribir equipo.");
         } else if (status === 422 || status === 400) {
-          // Error de validación: Categoría inválida, edad incorrecta o falta de autorizaciones
           if (data?.campo) {
             setErrors({ [data.campo]: data.error });
             setGeneralError(`Error en el campo ${data.campo}: ${data.error}`);
