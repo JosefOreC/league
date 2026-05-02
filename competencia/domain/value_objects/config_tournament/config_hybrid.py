@@ -27,7 +27,7 @@ class ConfigHybrid(ConfigTournament):
 
     
     @classmethod
-    def create(cls) -> ConfigHybrid:
+    def create(cls) -> "ConfigHybrid":
         return cls(
             teams_for_group=4,
             classified_by_group=2,

@@ -37,8 +37,11 @@ from .....application.services.user_compentencia_service import UserCompentencia
 
 def _parse_datetime(value: str, field_name: str) -> datetime:
     try:
-        return datetime.fromisoformat(value)
-    except (ValueError, TypeError):
+        dt = datetime.fromisoformat(value).astimezone()
+        # if dt.tzinfo is not None:
+        #     dt = dt.replace(tzinfo=None)
+        return dt
+    except (ValueError, TypeError): 
         raise ValueError(f"El campo '{field_name}' debe ser una fecha ISO 8601 válida")
 
 def _execute_generic_use_case(request, use_case_class, **kwargs):
@@ -277,4 +280,4 @@ def reject_team(request, team_id: str):
 @auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
 def get_tournament_teams(request, tournament_id: str):
     """Listar todos los equipos inscritos en un torneo para administración."""
-    return _execute_generic_use_case(request, GetTeamsByTournamentUseCase, tournament_id=tournament_id)
+    return _execute_generic_use_case(request, GetTeamsByTournamentUseCase, tournament_id=tournament_id)

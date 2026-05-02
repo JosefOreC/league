@@ -90,6 +90,8 @@ class TournamentRule:
         if isinstance(start, str):
             try:
                 start = datetime.fromisoformat(start)
+                if start.tzinfo is not None:
+                    start = start.replace(tzinfo=None)
             except ValueError:
                 pass
 
@@ -97,6 +99,8 @@ class TournamentRule:
         if isinstance(end, str):
             try:
                 end = datetime.fromisoformat(end)
+                if end.tzinfo is not None:
+                    end = end.replace(tzinfo=None)
             except ValueError:
                 pass
 

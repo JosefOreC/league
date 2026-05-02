@@ -66,7 +66,7 @@ class Criteria:
         }
 
     @classmethod
-    def from_dict(cls, **data) -> Criteria:
+    def from_dict(cls, **data) -> "Criteria":
         return cls(
             id=data.get("id", str(uuid.uuid4())),
             name=data["name"],

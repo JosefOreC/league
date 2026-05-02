@@ -259,7 +259,12 @@ class RulesBasedNLPAdapter(NLPAnalyzerPort):
         # "dure una semana"
         m = re.search(r"(?:termine|dure)\s+en\s+(una|1)\s+semana", text)
         if m:
-            base = datetime.fromisoformat(start_date) if start_date else datetime.now()
+            if start_date:
+                base = datetime.fromisoformat(start_date)
+                if base.tzinfo is not None:
+                    base = base.replace(tzinfo=None)
+            else:
+                base = datetime.now()
             dt = base + timedelta(days=7)
             return FieldExtraction(value=dt.strftime("%Y-%m-%d"), confidence=0.9)
 
@@ -269,7 +274,12 @@ class RulesBasedNLPAdapter(NLPAnalyzerPort):
             val = m.group(1)
             num = int(val) if val.isdigit() else self._WORD_NUMBERS.get(val, 0)
             if num:
-                base = datetime.fromisoformat(start_date) if start_date else datetime.now()
+                if start_date:
+                    base = datetime.fromisoformat(start_date)
+                    if base.tzinfo is not None:
+                        base = base.replace(tzinfo=None)
+                else:
+                    base = datetime.now()
                 dt = base + timedelta(days=num)
                 return FieldExtraction(value=dt.strftime("%Y-%m-%d"), confidence=0.85)
 

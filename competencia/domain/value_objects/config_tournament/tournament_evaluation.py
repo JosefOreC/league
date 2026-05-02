@@ -47,7 +47,7 @@ class TournamentEvaluation:
         }
 
     @classmethod
-    def from_dict(cls, **data) -> TournamentEvaluation:
+    def from_dict(cls, **data) -> "TournamentEvaluation":
         criterias = [Criteria.from_dict(**c) for c in data.get("criterias", [])]
         return cls(criteria_list=criterias)
 

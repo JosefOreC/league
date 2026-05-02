@@ -1,5 +1,5 @@
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 
 class MatchResult:
     def __init__(self, id: str, match_id: str, equipo_id: str, criterio_id: str,
