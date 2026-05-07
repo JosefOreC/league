@@ -6,20 +6,6 @@
 
 
 
-ITEGRADOR
-. Integración completa frontend, backend e IA
-Qué mostrar: que los tres servicios se comunican entre sí en tiempo real.
-Cómo demostrarlo:
-Abre el navegador en http://localhost:5173, inicia sesión con admin@league.com / admin123, navega a la sección de IA y genera criterios para un torneo. Mientras lo haces, muestra en paralelo los logs del backend:
-docker-compose logs -f backend
-Verás en tiempo real cómo el frontend llama a POST /api/ia/generar-criterios y el backend responde. Eso demuestra la integración de los tres.
-Para explicarlo, señala los tres archivos clave:
-Frontend → AIRecommendations.tsx
-Backend → ia_views.py
-IA → rubrica_generator.py
-2. Configuración de entorno y despliegue local
-Qué mostrar: el docker-compose.yml y que con un solo comando levanta todo.
-Cómo demostrarlo paso a paso:
 # 1. Clonar el repo
 git clone https://github.com/JosefOreC/league
 
@@ -65,3 +51,17 @@ El organizador interactúa desde AIRecommendations.tsx, que llama a POST /api/ia
 
 
 
+ITEGRADOR
+. Integración completa frontend, backend e IA
+Qué mostrar: que los tres servicios se comunican entre sí en tiempo real.
+Cómo demostrarlo:
+Abre el navegador en http://localhost:5173, inicia sesión con admin@league.com / admin123, navega a la sección de IA y genera criterios para un torneo. Mientras lo haces, muestra en paralelo los logs del backend:
+docker-compose logs -f backend
+Verás en tiempo real cómo el frontend llama a POST /api/ia/generar-criterios y el backend responde. Eso demuestra la integración de los tres.
+Para explicarlo, señala los tres archivos clave:
+Frontend → AIRecommendations.tsx
+Backend → ia_views.py
+IA → rubrica_generator.py
+2. Configuración de entorno y despliegue local
+Qué mostrar: el docker-compose.yml y que con un solo comando levanta todo.
+Cómo demostrarlo paso a paso:
