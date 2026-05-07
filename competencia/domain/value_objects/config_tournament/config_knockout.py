@@ -48,9 +48,13 @@ class ConfigKnockout(ConfigTournament):
         }
 
     def validate_for_start(self, tournament_teams_accepted_count:int, **args) -> bool:
-        if tournament_teams_accepted_count != (2 ** self.__best_of):
-            raise ValueError("El número de equipos debe ser par")
-        return True
+        for i in range(1,tournament_teams_accepted_count):
+            p = 2**i
+            if p==tournament_teams_accepted_count:
+                return True
+            if p>tournament_teams_accepted_count:
+                break
+        raise ValueError("El número de equipos debe ser potencia de 2")
     
     @classmethod
     def from_dict(cls, data: dict):

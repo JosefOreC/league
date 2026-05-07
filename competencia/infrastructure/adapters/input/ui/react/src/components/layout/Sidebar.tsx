@@ -12,6 +12,7 @@ import {
   CalendarDays,
   LifeBuoy,
   Bot,
+  Medal,
 } from "lucide-react";
 import { SystemRol } from "../../types/auth";
 
@@ -27,6 +28,12 @@ const navItems = [
     href: "/dashboard/torneos",
     icon: Trophy,
     roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR, SystemRol.COACH, SystemRol.PARTICIPANTE, SystemRol.PUBLICO],
+  },
+  {
+    name: "Mis Torneos",
+    href: "/dashboard/mis-torneos",
+    icon: Medal,
+    roles: [SystemRol.PARTICIPANTE],
   },
   {
     name: "Resultados",

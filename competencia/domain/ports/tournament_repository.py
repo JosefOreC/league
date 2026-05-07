@@ -20,6 +20,10 @@ class TournamentRepository(ABC):
         pass
     
     @abstractmethod
+    def find_my_tournaments(self, user_id: str) -> list[Tournament]:
+        pass
+    
+    @abstractmethod
     def delete(self, id: int):
         pass
     

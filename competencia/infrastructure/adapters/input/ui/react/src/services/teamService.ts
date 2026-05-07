@@ -1,5 +1,6 @@
 import { api } from "./api";
 import type { Equipo, RegisterTeamRequest } from "../types/team";
+import type { Tournament } from "../types/tournament";
 
 // Función para registrar un equipo y sus participantes en un torneo específico
 export async function registerTeam(
@@ -44,6 +45,18 @@ export async function approveTeam(teamId: string): Promise<Equipo> {
 
 export async function rejectTeam(teamId: string): Promise<Equipo> {
   const response = await api.post<Equipo>(`competencia/equipo/${teamId}/rechazar/`);
+  return response.data;
+}
+
+// ─── Mis torneos (participante) ─────────────────────────────────────────────
+
+export interface MyTournamentEntry {
+  tournament: Tournament;
+  team: Equipo;
+}
+
+export async function getMyTournaments(): Promise<MyTournamentEntry[]> {
+  const response = await api.get<MyTournamentEntry[]>(`competencia/mis-torneos/`);
   return response.data;
 }
 

@@ -7,22 +7,25 @@ from uuid import uuid4
 import math
 import random
 
+from ...domain.ports.team_repository import TeamRepository
+
 class GenerateFixturesUseCase:
-    def __init__(self, match_repository: MatchRepository, tournament_repository: TournamentRepository):
+    def __init__(self, match_repository: MatchRepository, tournament_repository: TournamentRepository, team_repository: TeamRepository):
         self.__match_repository = match_repository
         self.__tournament_repository = tournament_repository
+        self.__team_repository = team_repository
 
     def execute(self, tournament_id: str):
         tournament = self.__tournament_repository.find_by_id(tournament_id)
         if not tournament:
             raise ValueError("Torneo no encontrado")
         
-        # Validar estado para generar fixture
         if tournament.state != TournamentState.REGISTRATION_CLOSED:
-             # Si está en REGISTRATION_OPEN, podríamos cerrarlo automáticamente si se solicita
              pass
 
-        # Obtener equipos aprobados
+        teams_from_db = self.__team_repository.find_by_tournament(tournament_id)
+        tournament.set_teams(teams_from_db)
+
         teams = tournament.get_teams_accepted()
         if not teams:
             raise ValueError("No hay equipos aprobados para iniciar el torneo")
@@ -37,50 +40,106 @@ class GenerateFixturesUseCase:
         else:
             raise ValueError(f"Tipo de torneo no soportado")
 
-        # Persistencia
         self.__match_repository.delete_by_tournament(tournament_id)
         for m in matches:
             self.__match_repository.save(m)
             
-        # Transición de estado
-        tournament.update_state(TournamentState.IN_PROGRESS)
         self.__tournament_repository.update(tournament)
 
         return [m.to_dict() for m in matches]
 
     def _generate_knockout(self, tournament_id, teams):
         n = len(teams)
+        if n < 2:
+            raise ValueError("Se requieren al menos 2 equipos para generar llaves")
+            
         n_slots = 2**math.ceil(math.log2(n))
-        n_byes = n_slots - n
-        
         team_ids = [t.team.id for t in teams]
         random.shuffle(team_ids)
         
-        # Slots filled with team_ids + Nones for byes
-        # To avoid byes playing each other, we can place them strategically
-        slots = team_ids + [None] * n_byes
+        # Rellenar con None para los Byes
+        slots = team_ids + [None] * (n_slots - n)
         
-        matches = []
-        num_matches_round = n_slots // 2
-        for i in range(num_matches_round):
-            t1 = slots[i]
-            t2 = slots[n_slots - 1 - i]
+        all_matches = []
+        
+        # Generar todos los partidos del árbol vacío primero para tener los IDs
+        # Cantidad de rondas = log2(n_slots)
+        num_rondas = int(math.log2(n_slots))
+        
+        rounds_matches = [] # List of lists of matches per round
+        
+        # 1. Crear estructura de partidos vacíos por ronda
+        for r in range(1, num_rondas + 1):
+            num_matches_in_round = n_slots // (2**r)
+            round_list = []
+            for i in range(num_matches_in_round):
+                m = Match(
+                    id=str(uuid4()),
+                    tournament_id=tournament_id,
+                    ronda=r,
+                    posicion_en_ronda=i + 1,
+                    estado="PENDING",
+                    fase="KNOCKOUT"
+                )
+                round_list.append(m)
+            rounds_matches.append(round_list)
             
-            is_bye = (t1 is None or t2 is None)
-            match = Match(
-                id=str(uuid4()),
-                tournament_id=tournament_id,
-                ronda=1,
-                posicion_en_ronda=i + 1,
-                equipo_local_id=t1 or t2, # If one is None, the other is local
-                equipo_visitante_id=None if is_bye else t2,
-                es_bye=is_bye,
-                estado="FINISHED" if is_bye else "PENDING",
-                ganador_id=t1 or t2 if is_bye else None,
-                fase="KNOCKOUT"
-            )
-            matches.append(match)
-        return matches
+        # 2. Vincular partidos con sus sucesores (partido_siguiente_id)
+        for r in range(num_rondas - 1): # Todas las rondas menos la última (final)
+            current_round = rounds_matches[r]
+            next_round = rounds_matches[r+1]
+            for i, match in enumerate(current_round):
+                # El partido i y i+1 de la ronda r van al partido floor(i/2) de la ronda r+1
+                match_siguiente = next_round[i // 2]
+                # Hack para setear campo privado
+                match._Match__partido_siguiente_id = match_siguiente.id
+                
+        # 3. Asignar equipos iniciales a la Ronda 1
+        r1 = rounds_matches[0]
+        for i in range(len(r1)):
+            t1 = slots[i * 2]
+            t2 = slots[i * 2 + 1]
+            
+            match = r1[i]
+            match.set_teams(t1, t2)
+            
+            # Manejar BYES (si un equipo es None)
+            if t1 is None or t2 is None:
+                match._Match__es_bye = True
+                match._Match__estado = "FINISHED"
+                ganador = t1 or t2
+                match._Match__ganador_id = ganador
+                
+                # Avanzar al ganador inmediatamente si no es la final
+                if match.partido_siguiente_id:
+                    self._advance_winner_to_next_match(match, rounds_matches)
+
+        # Aplanar lista para retornar
+        for r_list in rounds_matches:
+            all_matches.extend(r_list)
+            
+        return all_matches
+
+    def _advance_winner_to_next_match(self, match, rounds_matches):
+        if not match.partido_siguiente_id: return
+        
+        # Buscar el partido siguiente en la estructura
+        next_match = None
+        for r_list in rounds_matches:
+            for m in r_list:
+                if m.id == match.partido_siguiente_id:
+                    next_match = m
+                    break
+            if next_match: break
+            
+        if not next_match: return
+        
+        # Si la posición en ronda actual es impar (1, 3, 5...), va al local del siguiente
+        # Si es par (2, 4, 6...), va al visitante
+        if match.posicion_en_ronda % 2 != 0:
+            next_match._Match__equipo_local_id = match.ganador_id
+        else:
+            next_match._Match__equipo_visitante_id = match.ganador_id
 
     def _generate_round_robin(self, tournament_id, teams):
         team_ids = [t.team.id for t in teams]

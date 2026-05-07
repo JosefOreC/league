@@ -6,6 +6,7 @@ from ...domain.entities.team import Team
 from ...domain.entities.participant import Participant
 from ...domain.entities.institution import Institution
 from ...domain.entities.docente_asesor import DocenteAsesor
+from ...domain.entities.user import User
 from uuid import uuid4
 
 class InscribeTeamUseCase:
@@ -21,7 +22,7 @@ class InscribeTeamUseCase:
         self.__institution_repository = institution_repository
         self.__docente_repository = docente_repository
 
-    def execute(self, tournament_id: str, team_data: dict, participants_data: list[dict]):
+    def execute(self, tournament_id: str, team_data: dict, participants_data: list[dict], user: User):
         tournament = self.__tournament_repository.find_by_id(tournament_id)
         if not tournament:
             raise ValueError("Torneo no encontrado")
@@ -61,7 +62,7 @@ class InscribeTeamUseCase:
             category=team_data.get("category", team_data.get("categoria")),
             institution_id=institution_id,
             nivel_tecnico_declarado=team_data.get("nivel_tecnico_declarado"),
-            representante_id=team_data.get("representante_id") or docente_id,
+            representante_id=user.id,
             docente_asesor_id=docente_id,
             participants=participants
         )

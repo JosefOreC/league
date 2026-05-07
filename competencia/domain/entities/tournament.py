@@ -228,6 +228,26 @@ class Tournament:
 
     def get_teams(self) -> tuple[TournamentTeam]:
         return tuple(self.__tournament_teams)
+        
+    def set_teams(self, teams: list[Team]):
+        self.__tournament_teams = []
+        for team in teams:
+            state_mapping = {
+                "PENDIENTE": TournamentTeamState.PENDING,
+                "APROBADO": TournamentTeamState.ACCEPTED,
+                "RECHAZADO": TournamentTeamState.REFUSED
+            }
+            state = state_mapping.get(team.estado_inscripcion, TournamentTeamState.PENDING)
+            self.__tournament_teams.append(
+                TournamentTeam(
+                    id=team.id,
+                    tournament_id=self.id,
+                    state=state,
+                    member_in_tournament_func=lambda doc: False,
+                    team=team,
+                    qualify_score_team=[]
+                )
+            )
     
     def get_teams_pending(self) -> list[TournamentTeam]:
         return [t for t in self.__tournament_teams if t.state == TournamentTeamState.PENDING]
@@ -350,18 +370,21 @@ class Tournament:
 
     def validate_for_start(self) -> bool:
         # HU-GT-04 Scenario 4: Validar equipos con participantes suficientes
-        for tt in self.get_teams_accepted():
+        for tt in self.__tournament_teams:
             self.__tournament_rule.validate_team_rules(tt.team)
             
-        self.__tournament_rule.validate_tournament_teams(self.get_teams_accepted())
+        self.__tournament_rule.validate_tournament_teams(self.__tournament_teams)
         self.__config_tournament.validate_for_start(**self.__get_tournament_args())
         return True
     
     def __get_tournament_args(self) -> dict:
         return {
-            "tournament_teams_accepted_count": len(self.get_teams_accepted()),
+            "tournament_teams_accepted_count": len(self.__tournament_teams),
             "max_teams": self.__tournament_rule.max_teams,
         }
+
+    def finish_tournament(self):
+        self.update_state(TournamentState.FINALIZED)
 
     def member_in_tournament(self, member_identifier: str) -> bool:
         for t in self.__tournament_teams:

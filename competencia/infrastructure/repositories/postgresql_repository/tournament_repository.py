@@ -185,6 +185,19 @@ class TournamentRepositoryPostgresql(TournamentRepository):
     def find_by_team_id(self, team_id: str) -> list[Tournament]:
         raise NotImplementedError("Requiere el modelo TournamentTeamModel")
 
+    def find_my_tournaments(self, user_id: str) -> list[Tournament]:
+        from ...adapters.output.models import TeamModel
+        tournament_ids = TeamModel.objects.filter(representante_id=user_id).values_list('tournament_id', flat=True).distinct()
+        
+        tournaments_orm = (
+            TournamentModel.objects
+            .select_related("tournament_rule")
+            .prefetch_related("tournament_members", "criterias")
+            .filter(id__in=tournament_ids)
+            .all()
+        )
+        return [self._tournament_to_domain(t) for t in tournaments_orm]
+
     def delete(self, id: str) -> None:
         TournamentModel.objects.filter(pk=id).delete()
 
@@ -252,6 +265,11 @@ class TournamentRepositoryPostgresql(TournamentRepository):
             )
             new_member_orms.append(member_orm)
         tournament_orm.tournament_members.set(new_member_orms)
+
+    def update_state(self, tournament: Tournament) -> None:
+        TournamentModel.objects.filter(pk=tournament.id).update(
+            state=tournament.state.value
+        )
 
     def find_by_name(self, name: str) -> list[Tournament] | None:
         tournaments_orm = (

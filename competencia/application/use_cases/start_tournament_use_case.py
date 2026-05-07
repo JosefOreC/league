@@ -3,16 +3,23 @@ from ...domain.entities.user import User
 from ...domain.entities.tournament import Tournament
 from ...domain.value_objects.enums.tournament_state import TournamentState
 from ...domain.value_objects.enums.tournament_rol import TournamentRol
+from ...domain.ports.team_repository import TeamRepository
+from .get_teams_by_tournament_use_case import GetTeamsByTournamentUseCase
 
 class StartTournamentUseCase:
-    def __init__(self, tournament_repository: TournamentRepository, user: User):
+    def __init__(self, tournament_repository: TournamentRepository, user: User, team_repository: TeamRepository):
         self.__tournament_repository = tournament_repository
         self.__user = user
+        self.__team_repository = team_repository
     
     def execute(self, tournament_id: str) -> None:
         tournament:Tournament = self.__tournament_repository.find_by_id(tournament_id)
         if not tournament:
             raise ValueError("El torneo no existe.")
+        teams = GetTeamsByTournamentUseCase(
+            team_repository=self.__team_repository
+        ).execute(tournament_id)
+        tournament.set_teams(teams)
         self.__valid_permissions(tournament)
         tournament.validate_for_start()
         tournament.update_state(TournamentState.IN_PROGRESS)

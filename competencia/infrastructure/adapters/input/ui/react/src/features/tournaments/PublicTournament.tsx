@@ -9,6 +9,7 @@ interface PublicData {
   teams: any[];
   matches: any[];
   standings: any[];
+  winner: any | null;
 }
 
 export function PublicTournament() {
@@ -129,6 +130,30 @@ export function PublicTournament() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
+        {/* Banner de Ganador (Solo si el torneo finalizó) */}
+        {data.winner && (
+          <div className="mb-8 animate-in zoom-in duration-700">
+            <div className="bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 border-2 border-yellow-300 rounded-2xl p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden relative group">
+               <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none group-hover:rotate-12 transition-transform duration-500">
+                  <Trophy className="h-32 w-32 text-yellow-600" />
+               </div>
+               <div className="flex items-center gap-6 z-10">
+                  <div className="h-20 w-20 bg-yellow-400 rounded-2xl flex items-center justify-center shadow-lg ring-4 ring-white rotate-3 group-hover:rotate-0 transition-transform duration-300">
+                      <Trophy className="h-10 w-10 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-yellow-800 font-black text-3xl uppercase tracking-tighter">Campeón del Torneo</h3>
+                    <p className="text-yellow-700 text-lg font-medium">¡Felicitaciones por la gran victoria!</p>
+                  </div>
+               </div>
+               <div className="text-center md:text-right z-10">
+                  <span className="block text-sm font-bold text-yellow-600 uppercase tracking-widest mb-1">Equipo Vencedor</span>
+                  <h2 className="text-4xl md:text-5xl font-black text-yellow-900 drop-shadow-sm leading-tight">{data.winner.name}</h2>
+               </div>
+            </div>
+          </div>
+        )}
+
         {/* Navigation Tabs */}
         <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-slate-200 mb-8 overflow-x-auto overflow-y-hidden">
           {[
@@ -333,7 +358,7 @@ export function PublicTournament() {
                       </thead>
                       <tbody className="divide-y divide-slate-200 bg-white">
                         {standings.map((teamStats, index) => (
-                          <tr key={teamStats.equipo_id} className={`hover:bg-slate-50 transition-colors ${index < 3 ? 'bg-blue-50/30' : ''}`}>
+                          <tr key={teamStats.team_id} className={`hover:bg-slate-50 transition-colors ${index < 3 ? 'bg-blue-50/30' : ''}`}>
                             <td className="px-6 py-4 font-medium text-slate-900">
                                <div className="flex items-center gap-2">
                                   {index === 0 && <Trophy className="h-4 w-4 text-yellow-500" />}
@@ -343,13 +368,13 @@ export function PublicTournament() {
                                </div>
                             </td>
                             <td className="px-6 py-4 font-bold text-slate-800">
-                                {teams.find(t => t.id === teamStats.equipo_id)?.name || "Equipo Desconocido"}
+                                {teams.find(t => String(t.id) === String(teamStats.team_id))?.name || "Equipo Desconocido"}
                             </td>
                             <td className="px-6 py-4 font-bold text-blue-600 text-center">{teamStats.puntos}</td>
                             <td className="px-6 py-4 text-slate-600 text-center">{teamStats.partidos_jugados}</td>
-                            <td className="px-6 py-4 text-slate-600 text-center">{teamStats.partidos_ganados}</td>
-                            <td className="px-6 py-4 text-slate-600 text-center">{teamStats.partidos_empatados}</td>
-                            <td className="px-6 py-4 text-slate-600 text-center">{teamStats.partidos_perdidos}</td>
+                            <td className="px-6 py-4 text-slate-600 text-center">{teamStats.victorias}</td>
+                            <td className="px-6 py-4 text-slate-600 text-center">{teamStats.empates}</td>
+                            <td className="px-6 py-4 text-slate-600 text-center">{teamStats.derrotas}</td>
                             <td className="px-6 py-4 font-medium text-slate-600 text-center">{teamStats.diferencia_puntaje}</td>
                           </tr>
                         ))}

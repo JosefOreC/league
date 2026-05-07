@@ -45,6 +45,14 @@ class Criteria:
     def value(self) -> float:
         return self.__value
     
+    @property
+    def min_value_qualification(self) -> float:
+        return self.__min_value_qualification
+    
+    @property
+    def max_value_qualification(self) -> float:
+        return self.__max_value_qualification
+
     def touch(self):
         self.__updated_at = datetime.now(timezone.utc)  # aware para DB con USE_TZ=True
 

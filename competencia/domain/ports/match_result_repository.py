@@ -13,3 +13,7 @@ class MatchResultRepository(ABC):
     @abstractmethod
     def find_by_team_in_match(self, team_id: str, match_id: str) -> list[MatchResult]:
         pass
+
+    @abstractmethod
+    def find_by_tournament(self, tournament_id: str) -> list[MatchResult]:
+        pass

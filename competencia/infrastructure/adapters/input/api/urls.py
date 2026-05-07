@@ -17,7 +17,8 @@ from .views import (
     get_public_tournament_data,
     approve_team,
     reject_team,
-    get_tournament_teams
+    get_tournament_teams,
+    get_my_tournaments
 )
 
 urlpatterns = [
@@ -39,5 +40,6 @@ urlpatterns = [
     path('torneo/<str:tournament_id>/equipos/', get_tournament_teams),
     path('equipo/<str:team_id>/aprobar/', approve_team),
     path('equipo/<str:team_id>/rechazar/', reject_team),
+    path('mis-torneos/',                    get_my_tournaments),
     path('ia/', include('competencia.infrastructure.adapters.input.api.ia_urls')),
 ]

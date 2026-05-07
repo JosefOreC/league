@@ -10,6 +10,7 @@ import { ConfigTournamentRules } from "../features/tournaments/ConfigTournamentR
 import { TournamentAdminPanel } from "../features/tournaments/TournamentAdminPanel";
 import { TournamentTeamsManagement } from "../features/tournaments/TournamentTeamsManagement";
 import { RegisterTeam } from "../features/teams/RegisterTeam";
+import { MyTournaments } from "../features/teams/MyTournaments";
 import { Competitions } from "../features/competitions/Competitions";
 import { Results } from "../features/results/Results";
 import { AIRecommendations } from "../features/ai/AIRecommendations";
@@ -53,6 +54,12 @@ export const router = createBrowserRouter([
       { path: "resultados",       Component: Results },
       { path: "calendario",       Component: CalendarView },
       { path: "soporte",          Component: Support },
+
+      // ── Participant only ────────────────────────────────────
+      {
+        path: "mis-torneos",
+        Component: () => <ParticipantOnly><MyTournaments /></ParticipantOnly>,
+      },
 
       // ── Manager / Admin only ────────────────────────────────────────────
       {

@@ -144,9 +144,9 @@ class TournamentRule:
     
     def validate_tournament_teams(self, tournament_teams: list[TournamentTeam]) -> bool:
         if len(tournament_teams) < self.__min_teams:
-            raise ValueError("El torneo no cumple el mínimo de equipos inscritos")
+            raise ValueError(f"El torneo no cumple el mínimo de equipos inscritos {len(tournament_teams)} / {self.__min_teams}")
         if len(tournament_teams) > self.__max_teams:
-            raise ValueError("El torneo excede el máximo de equipos inscritos")
+            raise ValueError(f"El torneo excede el máximo de equipos inscritos {len(tournament_teams)} / {self.__max_teams}")
         return True
     
     def validate(self):

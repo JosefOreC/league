@@ -59,6 +59,15 @@ class TournamentTeam:
             raise ValueError("El state debe ser un TournamentTeamState")
         self.__state = state
 
+    @property
+    def qualify_score_team(self) -> list[QualifyScoreTeam]:
+        return self.__qualify_score_team
+
+    def add_qualify_score(self, qualify_score: QualifyScoreTeam):
+        # Evitar duplicados para el mismo criterio (reemplazar si ya existe)
+        self.__qualify_score_team = [q for q in self.__qualify_score_team if q.id_criteria != qualify_score.id_criteria]
+        self.__qualify_score_team.append(qualify_score)
+
     def add_participant(self, participant: Participant):
         if len(self.__team.participants) + 1 > self.__tournament_rule.max_members:
             raise ValueError("Se excede el máximo de miembros permitido por el torneo")

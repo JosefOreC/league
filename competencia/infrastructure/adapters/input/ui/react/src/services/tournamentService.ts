@@ -132,11 +132,11 @@ export async function getTournamentById(id: string): Promise<Tournament> {
 export async function registerMatchResults(
   torneoId: string,
   partidoId: string,
-  resultados: any
+  qualifications: any
 ): Promise<any> {
   if (!torneoId) throw new Error("ID de torneo no encontrado");
-  console.log(`[tournamentService] Registrando resultados para partido ${partidoId} en torneo ${torneoId}`);
-  const response = await api.post(`competencia/partido/${partidoId}/resultado/`, { results: resultados });
+  console.log(`[tournamentService] Registrando calificaciones para partido ${partidoId}`);
+  const response = await api.post(`competencia/partido/${partidoId}/resultado/`, { qualifications });
   return response.data;
 }
 
@@ -163,10 +163,7 @@ export async function getTournamentStandings(
   return response.data;
 }
 
-export async function getTournamentBracket(
-  torneoId: string
-): Promise<import("../types/tournament").Partido[]> {
-  // Nota: Este endpoint no parece estar en urls.py todavía, se usará el de posiciones o uno futuro.
-  const response = await api.get(`competencia/torneo/${torneoId}/posiciones/`);
+export async function getPublicTournamentData(torneoId: string): Promise<any> {
+  const response = await api.get(`competencia/torneo/${torneoId}/public/`);
   return response.data;
 }
