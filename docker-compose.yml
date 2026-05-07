@@ -1,0 +1,61 @@
+services:
+
+  db:
+    image: postgres:17
+
+    container_name: postgres_db
+
+    restart: always
+
+    environment:
+      POSTGRES_DB: league_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./
+
+    container_name: django_backend
+
+    command: >
+      sh -c " python manage.py migrate && python manage.py runserver 0.0.0.0:8000 "
+
+    volumes:
+      - ./:/app
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      DB_NAME: league_db
+      DB_USER: admin
+      DB_PASSWORD: admin
+      DB_HOST: db
+      DB_PORT: 5432
+
+    depends_on:
+      - db
+
+  frontend:
+    build: ./competencia/infrastructure/adapters/input/ui/react
+
+    container_name: react_frontend
+
+    volumes:
+      - ./competencia/infrastructure/adapters/input/ui/react:/app
+      - /app/node_modules
+
+    ports:
+      - "5173:5173"
+
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

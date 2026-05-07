@@ -14,8 +14,8 @@ class MatchResult:
         self.__valor_normalizado = valor_normalizado
         self.__estado_resultado = estado_resultado # PARTIAL | DEFINITIVE
         self.__registrado_por = registrado_por
-        self.__created_at = created_at or datetime.now()
-        self.__updated_at = updated_at or datetime.now()
+        self.__created_at = created_at or datetime.now(timezone.utc)
+        self.__updated_at = updated_at or datetime.now(timezone.utc)
 
     @property
     def id(self) -> str: return self.__id

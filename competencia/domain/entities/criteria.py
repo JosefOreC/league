@@ -18,7 +18,8 @@ class Criteria:
     
     @classmethod
     def create(cls, name:str, description:str, min_value:float, max_value:float, value:float):
-        return cls(id=str(uuid.uuid4()), name=name, description=description, min_value=min_value, max_value=max_value, created_at=datetime.now(), updated_at=datetime.now(), value=value)
+        now = datetime.now(timezone.utc)  # aware para DB con USE_TZ=True
+        return cls(id=str(uuid.uuid4()), name=name, description=description, min_value=min_value, max_value=max_value, created_at=now, updated_at=now, value=value)
 
     @property
     def id(self) -> str:
@@ -45,7 +46,7 @@ class Criteria:
         return self.__value
     
     def touch(self):
-        self.__updated_at = datetime.now()
+        self.__updated_at = datetime.now(timezone.utc)  # aware para DB con USE_TZ=True
 
     def update_criteria(self, name:str, description:str, value:float):
         self.__name = name
@@ -73,8 +74,8 @@ class Criteria:
             description=data.get("description", ""),
             min_value_qualification=data["min_value"],
             max_value_qualification=data["max_value"],
-            created_at=data.get("created_at", datetime.now()),
-            updated_at=data.get("updated_at", datetime.now()),
+            created_at=data.get("created_at", datetime.now(timezone.utc)),
+            updated_at=data.get("updated_at", datetime.now(timezone.utc)),
             value=data["value"]
         )
 

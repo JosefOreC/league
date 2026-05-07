@@ -18,6 +18,13 @@ from ..value_objects.config_tournament.tournament_evaluation import TournamentEv
 
 class Tournament:
 
+    @staticmethod
+    def _strip_tz(dt: datetime) -> datetime:
+        """Convierte datetime timezone-aware a naive quitando tzinfo."""
+        if dt is not None and dt.tzinfo is not None:
+            return dt.replace(tzinfo=None)
+        return dt
+
     def __init__(self, id: str, name:str, description:str, date_start:datetime, date_end:datetime,
                 tournament_rule: TournamentRule, state:TournamentState, creator_user_id, 
                 category: TournamentCategory, users_tournaments: list[TournamentMember],
@@ -25,6 +32,9 @@ class Tournament:
                 config_tournament:ConfigTournament=None, tournament_evaluation:TournamentEvaluation=None):
         self.__name = name
         self.__description = description
+        # Normalizar a naive para evitar errores de comparación con USE_TZ=True
+        date_start = Tournament._strip_tz(date_start)
+        date_end = Tournament._strip_tz(date_end)
         if date_start > date_end:
             raise ValueError("La fecha de inicio debe ser menor a la fecha de fin")
         self.__date_start = date_start
@@ -52,6 +62,8 @@ class Tournament:
         max_teams: int,
         creator_user_id: str, category: TournamentCategory
     ):
+        # date_start ya fue normalizado a naive por _strip_tz en __init__
+        # datetime.now() es naive → comparación homogénea
         now = datetime.now()
 
         if date_start <= now:
@@ -239,8 +251,8 @@ class Tournament:
             max_members=tournament_rule.max_members,
             min_teams=tournament_rule.min_teams,
             max_teams=tournament_rule.max_teams,
-            created_at=self.__tournament_rule.created_at,
-            updated_at=datetime.now(),
+            created_at=Tournament._strip_tz(self.__tournament_rule.created_at),
+            updated_at=datetime.now(timezone.utc),  # aware para DB con USE_TZ=True
             validation_list=list(tournament_rule.validation_list),
             access_type=tournament_rule.access_type,
             date_start_inscription=tournament_rule.date_start_inscription,

@@ -87,17 +87,31 @@ WSGI_APPLICATION = 'config.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
-# DB PRODUCCION
+# DB TEST POSTGRESQL
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'league',      # Nombre de tu base de datos
+#         'USER': 'admin',     # Tu usuario de PostgreSQL
+#         'PASSWORD': 'admin',  # Tu contraseña
+#         'HOST': 'db',  # '127.0.0.1' o la IP de tu servidor
+#         'PORT': '5432',       # Puerto por defecto de PostgreSQL
+#     }
+# }
+
+# DB DESPLIEGUE
+import os
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'league',      # Nombre de tu base de datos
-        'USER': 'admin',     # Tu usuario de PostgreSQL
-        'PASSWORD': 'admin',  # Tu contraseña
-        'HOST': 'localhost',  # '127.0.0.1' o la IP de tu servidor
-        'PORT': '5432',       # Puerto por defecto de PostgreSQL
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -127,13 +141,13 @@ TIME_ZONE = 'America/Lima'
 
 USE_I18N = True
 
-USE_TZ = False
+USE_TZ = True   
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = 'static/' 
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",

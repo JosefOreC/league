@@ -37,11 +37,12 @@ from .....application.services.user_compentencia_service import UserCompentencia
 
 def _parse_datetime(value: str, field_name: str) -> datetime:
     try:
-        dt = datetime.fromisoformat(value).astimezone()
-        # if dt.tzinfo is not None:
-        #     dt = dt.replace(tzinfo=None)
+        dt = datetime.fromisoformat(value)
+        # Normalizar a naive: quitar tzinfo si viene con zona horaria
+        if dt.tzinfo is not None:
+            dt = dt.replace(tzinfo=None)
         return dt
-    except (ValueError, TypeError): 
+    except (ValueError, TypeError):
         raise ValueError(f"El campo '{field_name}' debe ser una fecha ISO 8601 válida")
 
 def _execute_generic_use_case(request, use_case_class, **kwargs):
@@ -82,9 +83,17 @@ def _execute_generic_use_case(request, use_case_class, **kwargs):
         if result is None and "tournament_id" in kwargs:
              result = repository.find_by_id(kwargs["tournament_id"])
 
-        if isinstance(result, (dict, list)):
+        if isinstance(result, dict):
             return Response(result, status=status.HTTP_200_OK)
-        
+
+        if isinstance(result, list):
+            # Serializar lista de objetos de dominio que tengan to_dict()
+            serialized = [
+                item.to_dict() if hasattr(item, "to_dict") else item
+                for item in result
+            ]
+            return Response(serialized, status=status.HTTP_200_OK)
+
         if result and hasattr(result, "to_dict"):
             return Response(result.to_dict(), status=status.HTTP_200_OK)
         

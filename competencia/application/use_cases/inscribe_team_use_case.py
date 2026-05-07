@@ -67,6 +67,5 @@ class InscribeTeamUseCase:
         )
 
         tournament.add_team(team)
-        self.__team_repository.save(team)
-        
+        self.__team_repository.save(team)        
         return team.to_dict()

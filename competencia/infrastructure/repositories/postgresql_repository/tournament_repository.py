@@ -17,7 +17,7 @@ from ...adapters.output.models import (
 )
 from ....domain.value_objects.config_tournament.config_tournament_factory import ConfigTournamentFactory
 from ....domain.value_objects.config_tournament.tournament_evaluation import TournamentEvaluation
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 
@@ -99,7 +99,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
     # -------------------------------------------------------------------------
 
     def save(self, tournament: Tournament) -> None:
-        now = datetime.now()
+        now = datetime.now(timezone.utc)  # aware para compatibilidad con USE_TZ=True
         rule = tournament.tournament_rule
 
         # 1. Guardar regla del torneo
@@ -189,7 +189,7 @@ class TournamentRepositoryPostgresql(TournamentRepository):
         TournamentModel.objects.filter(pk=id).delete()
 
     def update(self, tournament: Tournament) -> None:
-        now = datetime.now()
+        now = datetime.now(timezone.utc)  # aware para compatibilidad con USE_TZ=True
         rule = tournament.tournament_rule
 
         # 1. Actualizar regla

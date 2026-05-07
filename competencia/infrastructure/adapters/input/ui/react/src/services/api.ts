@@ -5,7 +5,10 @@ import { toast } from "sonner";
 // Configuración base de Axios para comunicarse con el servidor (backend)
 
 export const api = axios.create({
+  //PRUEBA LOCAL
   baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/",
+  //DESPLIEGUE EN PRODUCCIÓN
+  // baseURL: import.meta.env.VITE_API_URL || "http://backend:8000/api/",
   headers: {
     "Content-Type": "application/json",
   },
@@ -52,10 +55,10 @@ api.interceptors.response.use(
     // Show success toasts for mutations only if there's an explicit message
     const method = response.config.method?.toUpperCase();
     if (["POST", "PUT", "DELETE", "PATCH"].includes(method || "")) {
-      const isAuthRoute = 
-        response.config.url?.includes("/auth/login") || 
+      const isAuthRoute =
+        response.config.url?.includes("/auth/login") ||
         response.config.url?.includes("/auth/refresh");
-      
+
       if (!isAuthRoute) {
         // Only show toast if backend returned an explicit message or detail
         const message = response.data?.message || response.data?.detail;

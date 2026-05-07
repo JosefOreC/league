@@ -10,6 +10,14 @@ if TYPE_CHECKING:
 
 
 class TournamentRule:
+
+    @staticmethod
+    def _strip_tz(dt: datetime) -> datetime:
+        """Normaliza un datetime timezone-aware a naive quitando tzinfo."""
+        if dt is not None and dt.tzinfo is not None:
+            return dt.replace(tzinfo=None)
+        return dt
+
     def __init__(self, id:str, min_members:int, max_members:int, min_teams:int, max_teams:int, created_at:datetime, updated_at:datetime, 
                 validation_list: list[str] = None, access_type:TournamentAccessType = TournamentAccessType.PRIVATE,
                 date_start_inscription:datetime=None, date_end_inscription:datetime=None):
@@ -28,17 +36,19 @@ class TournamentRule:
             raise ValueError("El número máximo de equipos debe ser menor o igual a 64")
         self.__min_teams = min_teams
         self.__max_teams = max_teams
-        self.__created_at = created_at
-        self.__updated_at = updated_at
+        # Normalizar a naive para evitar conflictos con USE_TZ=True en Django
+        self.__created_at = TournamentRule._strip_tz(created_at)
+        self.__updated_at = TournamentRule._strip_tz(updated_at)
         self.__validation_list = validation_list if validation_list is not None else []
         self.__access_type = access_type
-        self.__date_start_inscription = date_start_inscription
-        self.__date_end_inscription = date_end_inscription
+        self.__date_start_inscription = TournamentRule._strip_tz(date_start_inscription)
+        self.__date_end_inscription = TournamentRule._strip_tz(date_end_inscription)
 
     
     @classmethod
     def create(cls, max_teams:int, min_members:int=2, max_members:int=5, min_teams:int=4, validation_list: list[str] = None, access_type:TournamentAccessType = TournamentAccessType.PRIVATE, date_start_inscription:datetime=None, date_end_inscription:datetime=None):
-        return cls(id=str(uuid4()), min_members=min_members, max_members=max_members, min_teams=min_teams, max_teams=max_teams, created_at=datetime.now(), updated_at=datetime.now(), validation_list=validation_list, access_type=access_type, date_start_inscription=date_start_inscription, date_end_inscription=date_end_inscription)
+        now = datetime.now(timezone.utc)  # aware para poder guardarse en DB con USE_TZ=True
+        return cls(id=str(uuid4()), min_members=min_members, max_members=max_members, min_teams=min_teams, max_teams=max_teams, created_at=now, updated_at=now, validation_list=validation_list, access_type=access_type, date_start_inscription=date_start_inscription, date_end_inscription=date_end_inscription)
 
     @property
     def id(self) -> str:
@@ -110,8 +120,8 @@ class TournamentRule:
             max_members=data["max_members"],
             min_teams=data["min_teams"],
             max_teams=data["max_teams"],
-            created_at=data.get("created_at", datetime.now()),
-            updated_at=data.get("updated_at", datetime.now()),
+            created_at=data.get("created_at", datetime.now(timezone.utc)),
+            updated_at=data.get("updated_at", datetime.now(timezone.utc)),
             validation_list=data.get("validation_list", []),
             access_type=TournamentAccessType(data["access_type"]),
             date_start_inscription=start,
@@ -119,7 +129,7 @@ class TournamentRule:
         )
 
     def touch(self):
-        self.__updated_at = datetime.now()
+        self.__updated_at = datetime.now(timezone.utc)  # aware para DB con USE_TZ=True
     
     def validate_team_rules(self, team: Team) -> bool:
         if len(team.participants) < self.__min_members:
@@ -148,7 +158,9 @@ class TournamentRule:
             raise ValueError("Debe definir las fechas de inicio y fin de inscripción")
         if self.__date_start_inscription > self.__date_end_inscription:
             raise ValueError("La fecha de inicio de inscripción debe ser menor a la fecha de fin de inscripción")
-        if self.__date_end_inscription < datetime.now():
+        # Asegurar comparación naive vs naive
+        date_end_naive = TournamentRule._strip_tz(self.__date_end_inscription)
+        if date_end_naive < datetime.now():
             raise ValueError("La fecha de fin de inscripción debe ser mayor a la fecha actual")
         
 

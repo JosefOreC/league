@@ -16,7 +16,9 @@ class Team:
         self.__institution_id = institution_id
         self.__nivel_tecnico_declarado = nivel_tecnico_declarado
         self.__estado_inscripcion = estado_inscripcion
-        self.__fecha_inscripcion = fecha_inscripcion or datetime.now()
+        # Normalizar a naive (la DB devuelve aware con USE_TZ=True)
+        raw_fecha = fecha_inscripcion or datetime.now(timezone.utc)
+        self.__fecha_inscripcion = raw_fecha.replace(tzinfo=None) if raw_fecha.tzinfo is not None else raw_fecha
         self.__representante_id = representante_id
         self.__docente_asesor_id = docente_asesor_id
         self.__participants = participants or []
