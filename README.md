@@ -8,11 +8,13 @@
 
 # 1. Clonar el repo
 git clone https://github.com/JosefOreC/league
-
-# 2. Levantar todo el entorno
+# 2. Estructura del proyecto
+La estructura del proyecto corresponde a la segmentación del software por módulos PMV.
+La decisión se basó en la recomendación al utilizar arquitectura hexagonal referente a la división de una gran aplicación en pequeñas aplicaciones para un mejor manejo del proyecto, archivos y desarrollo del software. 
+# 3. Levantar todo el entorno
 docker-compose up -d
 
-# 3. Verificar los 3 contenedores corriendo
+# 4. Verificar los 3 contenedores corriendo
 docker-compose ps
 Muestra la salida de docker-compose ps con los tres servicios activos (postgres_db, django_backend, react_frontend) y señala que las migraciones corren automáticamente porque el comando del backend es:
 command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
