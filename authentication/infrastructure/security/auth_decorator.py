@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from authentication.application.service.jwt_service import JWTService
 from authentication.domain.value_objects.enum.system_rol import SystemRol
+from django.conf import settings
 
 def auth_required(allowed_roles: list[SystemRol] = None):
     """
@@ -26,7 +27,7 @@ def auth_required(allowed_roles: list[SystemRol] = None):
 
             token = auth_header.split(" ")[1]
 
-            jwt_service = JWTService()
+            jwt_service = JWTService(SECRET_KEY=settings.SECRET_KEY)
 
             try:
                 payload = jwt_service.verify_token(token)

@@ -11,11 +11,12 @@ from .....application.use_cases.refresh_token_use_case import RefreshTokenUseCas
 from ....security.auth_decorator import auth_required
 from .....application.service.auth_identity_service import AuthIdentityService
 from .....application.use_cases.register_use_case import RegisterUseCase
+from django.conf import settings
 
 user_repository = UserRepositoryPostgresql()
 
 password_service = PasswordService()
-jwt_service = JWTService()
+jwt_service = JWTService(SECRET_KEY=settings.SECRET_KEY)
 register_use_case = RegisterUseCase(user_repository, password_service)
 
 auth_identity_service = AuthIdentityService(user_repository)

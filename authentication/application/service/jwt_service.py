@@ -1,13 +1,15 @@
 import jwt
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from django.conf import settings
 from ...domain.entities.user import User
 
 class InvalidToken(Exception):
     pass
 
 class JWTService:
+    def __init__(self, SECRET_KEY):
+        self.SECRET_KEY = SECRET_KEY
+
     def create_access_token(self, user: User) -> str:
         payload = {
             "user_id": str(user.id),
@@ -21,7 +23,7 @@ class JWTService:
 
         return jwt.encode(
             payload,
-            settings.SECRET_KEY,
+            self.SECRET_KEY,
             algorithm="HS256"
         )
 
@@ -35,7 +37,7 @@ class JWTService:
 
         return jwt.encode(
             payload,
-            settings.SECRET_KEY,
+            self.SECRET_KEY,
             algorithm="HS256"
         )
 
@@ -43,7 +45,7 @@ class JWTService:
         try:
             return jwt.decode(
                 token,
-                settings.SECRET_KEY,
+                self.SECRET_KEY,
                 algorithms=["HS256"]
             )
         except jwt.ExpiredSignatureError:
@@ -55,7 +57,7 @@ class JWTService:
         try:
             payload = jwt.decode(
                 refresh_token,
-                settings.SECRET_KEY,
+                self.SECRET_KEY,
                 algorithms=["HS256"]
             )
 
@@ -73,7 +75,7 @@ class JWTService:
 
             return jwt.encode(
                 new_payload,
-                settings.SECRET_KEY,
+                self.SECRET_KEY,
                 algorithm="HS256"
             )
 
