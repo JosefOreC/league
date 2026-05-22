@@ -92,7 +92,7 @@ class GenerateFixturesUseCase:
                 # El partido i y i+1 de la ronda r van al partido floor(i/2) de la ronda r+1
                 match_siguiente = next_round[i // 2]
                 # Hack para setear campo privado
-                match._Match__partido_siguiente_id = match_siguiente.id
+                match.set_partido_siguiente_id(match_siguiente.id)
                 
         # 3. Asignar equipos iniciales a la Ronda 1
         r1 = rounds_matches[0]
@@ -105,10 +105,10 @@ class GenerateFixturesUseCase:
             
             # Manejar BYES (si un equipo es None)
             if t1 is None or t2 is None:
-                match._Match__es_bye = True
-                match._Match__estado = "FINISHED"
+                match.set_es_bye(True)
+                match.set_estado("FINISHED")
                 ganador = t1 or t2
-                match._Match__ganador_id = ganador
+                match.set_ganador_id(ganador)
                 
                 # Avanzar al ganador inmediatamente si no es la final
                 if match.partido_siguiente_id:
@@ -137,9 +137,9 @@ class GenerateFixturesUseCase:
         # Si la posición en ronda actual es impar (1, 3, 5...), va al local del siguiente
         # Si es par (2, 4, 6...), va al visitante
         if match.posicion_en_ronda % 2 != 0:
-            next_match._Match__equipo_local_id = match.ganador_id
+            next_match.set_equipo_local_id(match.ganador_id)
         else:
-            next_match._Match__equipo_visitante_id = match.ganador_id
+            next_match.set_equipo_visitante_id(match.ganador_id)
 
     def _generate_round_robin(self, tournament_id, teams):
         team_ids = [t.team.id for t in teams]
@@ -204,7 +204,7 @@ class GenerateFixturesUseCase:
             for m in g_matches:
                 # Update phase and group_id
                 # (Hackish way to set private fields for this demonstration)
-                m._Match__fase = "GROUPS"
-                m._Match__grupo_id = group_id
+                m.set_fase("GROUPS")
+                m.set_grupo_id(group_id)
                 all_matches.append(m)
         return all_matches

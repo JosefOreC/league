@@ -52,6 +52,32 @@ class Match:
     @property
     def fecha_programada(self) -> datetime: return self.__fecha_programada
 
+    def set_partido_siguiente_id(self, value):
+        self.__partido_siguiente_id = value
+    
+    def set_bye(self, value):
+        if type(value) != bool:
+            raise ValueError("Valor no valido")
+        self.__es_bye = value
+    
+    def set_estado(self, value):
+        self.__estado == value
+    
+    def set_ganador_id(self, value):
+        self.__ganador_id = value
+
+    def set_equipo_local_id(self, value):
+        self.__equipo_local_id = value
+    
+    def set_equipo_visitante_id(self, value):
+        self.__equipo_visitante_id = value
+
+    def set_fase(self, value):
+        self.__fase = value
+    
+    def set_grupo_id(self, value):
+        self.__grupo_id = value
+
     def set_teams(self, local_id: str, visitor_id: str):
         self.__equipo_local_id = local_id
         self.__equipo_visitante_id = visitor_id

@@ -109,8 +109,8 @@ class QualifyMatchUseCase:
         if not next_match: return
         
         if match.posicion_en_ronda % 2 != 0:
-            next_match._Match__equipo_local_id = match.ganador_id
+            next_match.set_equipo_local_id (match.ganador_id)
         else:
-            next_match._Match__equipo_visitante_id = match.ganador_id
+            next_match.set_equipo_visitante_id(match.ganador_id)
             
         self.__match_repository.save(next_match)
