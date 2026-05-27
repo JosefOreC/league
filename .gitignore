@@ -37,6 +37,7 @@ parts/
 sdist/
 var/
 wheels/
+docs/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
@@ -276,7 +277,8 @@ __generated__
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
