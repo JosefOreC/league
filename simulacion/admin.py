@@ -1,5 +1,5 @@
 from django.contrib import admin
-from simulacion.infrastructure.adapters.output.models import SimulacionPredictiva
+from simulacion.infrastructure.adapters.output.models import SimulacionPredictiva, AnalisisEntrega
 
 
 @admin.register(SimulacionPredictiva)
@@ -9,3 +9,12 @@ class SimulacionPredictivaAdmin(admin.ModelAdmin):
     list_filter   = ['modelo_version', 'es_oficial']
     search_fields = ['participante_id', 'torneo_id']
     readonly_fields = ['creado_en']
+
+
+@admin.register(AnalisisEntrega)
+class AnalisisEntregaAdmin(admin.ModelAdmin):
+    list_display    = ['id', 'caso', 'participante_id', 'torneo_id',
+                       'puntaje_total_simulado', 'creado_en']
+    list_filter     = ['caso']
+    search_fields   = ['participante_id', 'torneo_id', 'reto_id']
+    readonly_fields = ['id', 'creado_en']
