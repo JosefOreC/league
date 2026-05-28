@@ -91,8 +91,9 @@ def listar_analisis(request, participante_id, torneo_id):
 @api_view(['GET'])
 @auth_required()
 def contexto_torneo(request, tournament_id):
+    user_id = request.user_data['user_id']
     try:
-        ctx = obtener_contexto_torneo(tournament_id, str(request.user.id))
+        ctx = obtener_contexto_torneo(tournament_id, user_id)
     except PermissionError as e:
         return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
     return Response(ctx)
@@ -117,10 +118,11 @@ def ejecutar_simulacion(request, tournament_id):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    user_id = request.user_data['user_id']
     try:
         resultado = EjecutarSimulacionUseCase().ejecutar(
             tournament_id=tournament_id,
-            user_id=str(request.user.id),
+            user_id=user_id,
             entregable=str(entregable),
         )
     except PermissionError as e:
