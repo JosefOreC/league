@@ -1,5 +1,6 @@
 """
-Entidades de dominio para HU-SIM-01 — Contexto de simulación del torneo.
+Entidades de dominio — Contexto de simulación del torneo.
+Utilizadas por HU-SIM-01 (lectura de contexto) y HU-SIM-02 (motor de scoring).
 Estas dataclasses son objetos de valor puros (sin ORM) que circulan entre
 capas de aplicación e infraestructura siguiendo la arquitectura hexagonal.
 """
@@ -39,10 +40,19 @@ class CriterioInfo:
 @dataclass(frozen=True)
 class SimulationContext:
     """
-    Agregado de dominio para HU-SIM-01.
+    Agregado de dominio para HU-SIM-01 y HU-SIM-02.
     Contiene todo el contexto necesario para que el motor de simulación
     opere sin acceder directamente a la base de datos.
+
+    Attributes:
+        tournament:           Datos básicos del torneo.
+        team:                 Equipo aprobado del representante.
+        criterios:            Criterios de evaluación ordenados por nombre.
+        total_approved_teams: Total de equipos con estado_inscripcion='APROBADO'
+                              en el torneo. Usado por HU-SIM-03 para posición
+                              estimada. Default=0 para compatibilidad con HU-SIM-01.
     """
     tournament: TournamentInfo
     team: TeamInfo
     criterios: List[CriterioInfo] = field(default_factory=list)
+    total_approved_teams: int = 0

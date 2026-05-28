@@ -11,7 +11,7 @@ CriteriaModel, TeamModel, ParticipantModel).
 """
 from typing import Optional
 
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 
 from competencia.infrastructure.adapters.output.models import (
     CriteriaModel,
@@ -61,6 +61,14 @@ class TournamentContextRepository(TournamentContextPort):
         """
         tournament_qs = (
             TournamentModel.objects
+            .annotate(
+                # Conteo de equipos aprobados incluido en la query principal (sin query extra)
+                total_approved_teams=Count(
+                    'teams',
+                    filter=Q(teams__estado_inscripcion='APROBADO'),
+                    distinct=True,
+                )
+            )
             .prefetch_related(
                 Prefetch(
                     'criterias',
@@ -127,4 +135,5 @@ class TournamentContextRepository(TournamentContextPort):
             tournament=tournament_info,
             team=team_info,
             criterios=criterios,
+            total_approved_teams=getattr(tournament, 'total_approved_teams', 0),
         )
