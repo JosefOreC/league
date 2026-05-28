@@ -1,6 +1,6 @@
-from django.shortcuts import render
 from django.http import JsonResponse
-# Create your views here.
+from django.views.decorators.csrf import csrf_exempt
 
-def test(request):
-    return JsonResponse({'message': 'Hola desde simulacion'})
+@csrf_exempt
+def test(request, *args, **kwargs):
+    return JsonResponse({"message": "Acción completada con éxito"})

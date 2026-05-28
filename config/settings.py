@@ -94,8 +94,9 @@ DATABASES = {
         'NAME': 'league',      # Nombre de tu base de datos
         'USER': 'admin',     # Tu usuario de PostgreSQL
         'PASSWORD': 'admin',  # Tu contraseña
-        'HOST': 'localhost',  # '127.0.0.1' o la IP de tu servidor
+        'HOST': 'db',  # '127.0.0.1' o la IP de tu servidor
         'PORT': '5432',       # Puerto por defecto de PostgreSQL
+        'CONN_MAX_AGE': 60, # Opcional: para mantener las conexiones abiertas y mejorar el rendimiento
     }
 }
 
@@ -154,3 +155,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
+
+# OPTIMIZACIÓN PARA PRUEBAS DE ESTRÉS
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+]
