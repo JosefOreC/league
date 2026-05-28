@@ -12,7 +12,7 @@ class AnalizarComponentesUseCase:
             raise ValueError(f'No existe torneo con criterios de COMPONENTES con id={torneo_id}')
         resultado = analizar_entrega(descripcion_solucion, contexto)
         analisis = guardar_analisis({
-            'reto_id':                     torneo_id,
+            'reto_id':                     reto_id,
             'participante_id':             participante_id,
             'torneo_id':                   torneo_id,
             'caso':                        'COMPONENTES',

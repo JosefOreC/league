@@ -62,6 +62,7 @@ def obtener_contexto_torneo(tournament_id: str, user_id: str) -> dict:
                 t.description               AS torneo_descripcion,
                 t.category,
                 eq.id                       AS equipo_id,
+                eq.name                     AS equipo_nombre,
                 eq.nivel_tecnico_declarado,
                 (
                     SELECT COUNT(*)
@@ -89,7 +90,10 @@ def obtener_contexto_torneo(tournament_id: str, user_id: str) -> dict:
     return {
         'torneo_nombre':      filas[0]['torneo_nombre'],
         'torneo_descripcion': filas[0]['torneo_descripcion'],
+        'torneo_estado':      filas[0].get('torneo_estado', ''),
+        'category':           filas[0].get('category', ''),
         'equipo_id':          filas[0]['equipo_id'],
+        'equipo_nombre':      filas[0].get('equipo_nombre', ''),
         'nivel_tecnico':      filas[0]['nivel_tecnico_declarado'],
         'total_equipos':      filas[0]['total_equipos_aprobados'],
         'criterios': [

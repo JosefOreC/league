@@ -1,3 +1,0 @@
-
-  # PMV1 - TALLER DE PROYECTOS
-  

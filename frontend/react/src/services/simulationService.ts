@@ -76,13 +76,13 @@ export async function getSimulationContext(
   return data;
 }
 
-// 3.8  POST /api/simulacion/torneo/<tournament_id>/ejecutar/
+// 3.8  POST /api/simulacion/torneo/<tournament_id>/simular/
 export async function runSimulation(
   tournamentId: string,
   payload: RunSimulationRequest
 ): Promise<SimulationResult> {
   const { data } = await api.post<SimulationResult>(
-    `simulacion/torneo/${tournamentId}/ejecutar/`,
+    `simulacion/torneo/${tournamentId}/simular/`,
     payload
   );
   return data;

@@ -96,7 +96,34 @@ def contexto_torneo(request, tournament_id):
         ctx = obtener_contexto_torneo(tournament_id, user_id)
     except PermissionError as e:
         return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
-    return Response(ctx)
+
+    # Reshape flat dict → nested structure expected by SimulationContext (frontend)
+    payload = {
+        'tournament': {
+            'id':       tournament_id,
+            'name':     ctx['torneo_nombre'],
+            'state':    ctx.get('torneo_estado', ''),
+            'category': ctx.get('category', ''),
+        },
+        'team': {
+            'id':                      ctx['equipo_id'],
+            'name':                    ctx.get('equipo_nombre', ctx['equipo_id']),
+            'nivel_tecnico_declarado': ctx.get('nivel_tecnico', ''),
+            'participants_count':      ctx.get('total_equipos', 0),
+        },
+        'criterios': [
+            {
+                'id':               c['criterio_id'],
+                'name':             c['criterio_nombre'],
+                'description':      c.get('criterio_descripcion', ''),
+                'peso':             c['peso']*100,
+                'min_qualification': c['min_value_qualification'],
+                'max_qualification': c['max_value_qualification'],
+            }
+            for c in ctx['criterios']
+        ],
+    }
+    return Response(payload)
 
 
 @api_view(['POST'])

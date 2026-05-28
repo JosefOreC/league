@@ -153,7 +153,7 @@ class EjecutarSimulacionUseCase:
         return {
             'simulation_id': str(uuid.uuid4()),
             'scores':        scores,
-            'puntaje_total': total,
+            'puntaje_total': total*100,
             **posicion_data,
             'fortalezas':    fortalezas,
             'debilidades':   debilidades,
