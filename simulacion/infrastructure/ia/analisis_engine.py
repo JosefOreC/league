@@ -82,4 +82,6 @@ Entrega del participante:
             {"role": "user",   "content": user_msg},
         ],
     )
-    return json.loads(response.choices[0].message.content.strip())
+    raw = response.choices[0].message.content.strip()
+    raw = raw.replace('```json', '').replace('```', '').strip()
+    return json.loads(raw)
