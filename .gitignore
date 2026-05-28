@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/windows,django,visualstudiocode,python,reactnative
 # Edit at https://www.toptal.com/developers/gitignore?templates=windows,django,visualstudiocode,python,reactnative
 
+### ML Models ###
+xgboost_model.pkl
+
 ### Django ###
 *.log
 *.pot
@@ -276,7 +279,7 @@ __generated__
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
 
 # Thumbnails
 ._*
