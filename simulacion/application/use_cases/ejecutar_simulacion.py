@@ -116,7 +116,12 @@ class EjecutarSimulacionUseCase:
 
         ctx = obtener_contexto_torneo(tournament_id, user_id)
 
-        scores_raw    = ejecutar_scoring(entregable.strip(), ctx['criterios'])
+        scores_raw    = ejecutar_scoring(
+            entregable.strip(),
+            ctx['criterios'],
+            torneo_nombre=ctx['torneo_nombre'],
+            torneo_descripcion=ctx['torneo_descripcion'],
+        )
         scores, total = calcular_scores(scores_raw, ctx['criterios'])
 
         posicion_data = calcular_posicion(total, ctx['nivel_tecnico'], ctx['total_equipos'])

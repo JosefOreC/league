@@ -22,11 +22,18 @@ Responde SOLO con JSON valido, sin texto adicional ni markdown:
 Cada valor_simulado debe estar dentro del rango [min_value_qualification, max_value_qualification]."""
 
 
-def ejecutar_scoring(entregable: str, criterios: list) -> list:
+def ejecutar_scoring(entregable: str, criterios: list,
+                     torneo_nombre: str = '', torneo_descripcion: str = '') -> list:
     criterios_txt = '\n'.join(
         f"- ID:{c['criterio_id']} | {c['criterio_nombre']}: {c['criterio_descripcion']} "
         f"(rango:{c['min_value_qualification']}-{c['max_value_qualification']}, peso:{c['peso']}%)"
         for c in criterios
+    )
+    user_content = (
+        f"Torneo: {torneo_nombre}\n"
+        f"Reto/Objetivo: {torneo_descripcion}\n\n"
+        f"Criterios a evaluar:\n{criterios_txt}\n\n"
+        f"Entregable del participante:\n{entregable}"
     )
     response = _get_client().chat.completions.create(
         model=MODEL,
@@ -34,7 +41,7 @@ def ejecutar_scoring(entregable: str, criterios: list) -> list:
         seed=42,
         messages=[
             {'role': 'system', 'content': SYSTEM_SCORING},
-            {'role': 'user',   'content': f"Criterios:\n{criterios_txt}\n\nEntregable:\n{entregable}"},
+            {'role': 'user',   'content': user_content},
         ],
     )
     raw = response.choices[0].message.content.strip()
