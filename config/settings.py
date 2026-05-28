@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -91,11 +92,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'league',      # Nombre de tu base de datos
-        'USER': 'admin',     # Tu usuario de PostgreSQL
-        'PASSWORD': 'admin',  # Tu contraseña
-        'HOST': 'localhost',  # '127.0.0.1' o la IP de tu servidor
-        'PORT': '5432',       # Puerto por defecto de PostgreSQL
+        'NAME': os.getenv('DB_NAME', 'league'),
+        'USER': os.getenv('DB_USER', 'admin'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'admin'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 

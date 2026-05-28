@@ -13,6 +13,9 @@ import {
   LifeBuoy,
   Bot,
   Medal,
+  FlaskConical,
+  LineChart,
+  Gamepad2,
 } from "lucide-react";
 import { SystemRol } from "../../types/auth";
 
@@ -34,6 +37,24 @@ const navItems = [
     href: "/dashboard/mis-torneos",
     icon: Medal,
     roles: [SystemRol.PARTICIPANTE],
+  },
+  {
+    name: "Simulación",
+    href: "/dashboard/simulacion",
+    icon: FlaskConical,
+    roles: [SystemRol.PARTICIPANTE],
+  },
+  {
+    name: "Panel de Equipos",
+    href: "/dashboard/simulacion/panel",
+    icon: LineChart,
+    roles: [SystemRol.COACH],
+  },
+  {
+    name: "Práctica Libre",
+    href: "/dashboard/practica-libre",
+    icon: Gamepad2,
+    roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR, SystemRol.COACH, SystemRol.PARTICIPANTE, SystemRol.PUBLICO],
   },
   {
     name: "Resultados",

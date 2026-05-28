@@ -19,6 +19,12 @@ import { Institutions } from "../features/institutions/Institutions";
 import { CalendarView } from "../features/calendar/CalendarView";
 import { Support } from "../features/support/Support";
 import { PublicTournament } from "../features/tournaments/PublicTournament";
+import { ConfigureSimulation } from "../features/simulation/ConfigureSimulation";
+import { RunSimulation } from "../features/simulation/RunSimulation";
+import { SimulationPrediction } from "../features/simulation/SimulationPrediction";
+import { SimulationFeedback } from "../features/simulation/SimulationFeedback";
+import { CoachPanel } from "../features/simulation/CoachPanel";
+import { FreePractice } from "../features/simulation/FreePractice";
 import { RoleGuard } from "../components/auth/RoleGuard";
 import { SystemRol } from "../types/auth";
 
@@ -60,6 +66,35 @@ export const router = createBrowserRouter([
         path: "mis-torneos",
         Component: () => <ParticipantOnly><MyTournaments /></ParticipantOnly>,
       },
+      {
+        path: "simulacion",
+        Component: () => <ParticipantOnly><ConfigureSimulation /></ParticipantOnly>,
+      },
+      {
+        path: "simulacion/:id/ejecutar",
+        Component: () => <ParticipantOnly><RunSimulation /></ParticipantOnly>,
+      },
+      {
+        path: "simulacion/:id/prediccion",
+        Component: () => <ParticipantOnly><SimulationPrediction /></ParticipantOnly>,
+      },
+      {
+        path: "simulacion/:id/retroalimentacion",
+        Component: () => <ParticipantOnly><SimulationFeedback /></ParticipantOnly>,
+      },
+
+      // ── Coach only ──────────────────────────────────────────
+      {
+        path: "simulacion/panel",
+        Component: () => (
+          <RoleGuard allowedRoles={[SystemRol.COACH]} redirectTo="/dashboard">
+            <CoachPanel />
+          </RoleGuard>
+        ),
+      },
+
+      // ── Any authenticated role ──────────────────────────────
+      { path: "practica-libre", Component: FreePractice },
 
       // ── Manager / Admin only ────────────────────────────────────────────
       {
