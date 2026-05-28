@@ -51,3 +51,34 @@ class AnalisisEntrega(models.Model):
             models.Index(fields=['participante_id', 'torneo_id']),
             models.Index(fields=['reto_id']),
         ]
+
+
+class SimulacionResultado(models.Model):
+    id                    = models.UUIDField(primary_key=True, default=_uuid.uuid4, editable=False)
+    tournament_id         = models.CharField(max_length=36, db_index=True)
+    equipo_id             = models.CharField(max_length=36, db_index=True)
+    entregable            = models.TextField()
+
+    scores                = models.JSONField(default=list)
+    puntaje_total         = models.DecimalField(max_digits=5, decimal_places=2)
+
+    posicion_estimada     = models.IntegerField()
+    total_equipos         = models.IntegerField()
+    percentil             = models.FloatField()
+    advertencia_muestra   = models.CharField(max_length=100, blank=True, default='')
+
+    fortalezas            = models.JSONField(default=list)
+    debilidades           = models.JSONField(default=list)
+
+    retro_resumen         = models.TextField(blank=True, default='')
+    retro_recomendaciones = models.JSONField(default=list)
+    sin_mejoras_criticas  = models.BooleanField(default=False)
+
+    creado_en             = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'simulacion_resultado'
+        indexes  = [
+            models.Index(fields=['tournament_id', 'equipo_id']),
+            models.Index(fields=['creado_en']),
+        ]

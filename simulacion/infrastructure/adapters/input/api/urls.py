@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     predecir_resultado, historial_simulacion,
     obtener_retos, analizar_programacion, analizar_componentes, listar_analisis,
+    contexto_torneo, ejecutar_simulacion,
 )
 
 urlpatterns = [
@@ -11,4 +12,6 @@ urlpatterns = [
     path('analisis/programacion/', analizar_programacion, name='sim-analisis-programacion'),
     path('analisis/componentes/', analizar_componentes, name='sim-analisis-componentes'),
     path('analisis/<str:participante_id>/<str:torneo_id>/', listar_analisis, name='sim-analisis-listar'),
+    path('torneo/<str:tournament_id>/contexto/', contexto_torneo, name='sim-contexto'),
+    path('torneo/<str:tournament_id>/ejecutar/', ejecutar_simulacion, name='sim-ejecutar'),
 ]

@@ -2,11 +2,18 @@ from openai import OpenAI
 import json
 import os
 
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.environ['OPENROUTER_API_KEY'],
-)
 MODEL = "openrouter/auto"
+_client = None
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=os.environ['OPENROUTER_API_KEY'],
+        )
+    return _client
 
 SYSTEM_PROGRAMACION = """
 Eres un evaluador técnico de código para torneos de robótica escolar.
@@ -67,7 +74,7 @@ Criterios a evaluar:
 Entrega del participante:
 {contenido}
 """
-    response = client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model=MODEL,
         temperature=0,
         messages=[

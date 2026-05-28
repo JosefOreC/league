@@ -7,7 +7,10 @@ from simulacion.application.use_cases.predecir_resultado import PredecirResultad
 from simulacion.application.use_cases.obtener_retos import ObtenerRetosUseCase
 from simulacion.application.use_cases.analizar_programacion import AnalizarProgramacionUseCase
 from simulacion.application.use_cases.analizar_componentes import AnalizarComponentesUseCase
-from simulacion.infrastructure.persistence.simulacion_repository import SimulacionRepository
+from simulacion.application.use_cases.ejecutar_simulacion import EjecutarSimulacionUseCase
+from simulacion.infrastructure.persistence.simulacion_repository import (
+    SimulacionRepository, obtener_contexto_torneo,
+)
 from simulacion.infrastructure.adapters.output.models import AnalisisEntrega
 from .serializers import (
     PredecirInputSerializer, PredecirOutputSerializer,
@@ -83,3 +86,44 @@ def listar_analisis(request, participante_id, torneo_id):
         torneo_id=torneo_id,
     ).order_by('-creado_en')
     return Response(AnalisisEntregaSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@auth_required()
+def contexto_torneo(request, tournament_id):
+    try:
+        ctx = obtener_contexto_torneo(tournament_id, str(request.user.id))
+    except PermissionError as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+    return Response(ctx)
+
+
+@api_view(['POST'])
+@auth_required()
+def ejecutar_simulacion(request, tournament_id):
+    entregable = request.data.get('entregable')
+
+    if not entregable or not str(entregable).strip():
+        return Response(
+            {'campo': 'entregable', 'error': 'requerido'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if len(str(entregable).strip()) < 100:
+        return Response(
+            {
+                'error':         'El entregable debe tener al menos 100 caracteres',
+                'actual_length': len(str(entregable).strip()),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        resultado = EjecutarSimulacionUseCase().ejecutar(
+            tournament_id=tournament_id,
+            user_id=str(request.user.id),
+            entregable=str(entregable),
+        )
+    except PermissionError as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+    return Response(resultado, status=status.HTTP_200_OK)
