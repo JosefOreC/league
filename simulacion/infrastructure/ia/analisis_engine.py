@@ -1,9 +1,12 @@
-import google.generativeai as genai
+from openai import OpenAI
 import json
 import os
 
-genai.configure(api_key=os.environ['GEMINI_API_KEY'])
-client = genai.GenerativeModel('gemini-1.5-flash')
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.environ['OPENROUTER_API_KEY'],
+)
+MODEL = "openrouter/auto"
 
 SYSTEM_PROGRAMACION = """
 Eres un evaluador técnico de código para torneos de robótica escolar.
@@ -64,5 +67,12 @@ Criterios a evaluar:
 Entrega del participante:
 {contenido}
 """
-    response = client.generate_content(system + '\n\n' + user_msg)
-    return json.loads(response.text.strip())
+    response = client.chat.completions.create(
+        model=MODEL,
+        temperature=0,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user_msg},
+        ],
+    )
+    return json.loads(response.choices[0].message.content.strip())
