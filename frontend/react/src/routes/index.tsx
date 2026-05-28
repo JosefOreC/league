@@ -19,6 +19,9 @@ import { Institutions } from "../features/institutions/Institutions";
 import { CalendarView } from "../features/calendar/CalendarView";
 import { Support } from "../features/support/Support";
 import { PublicTournament } from "../features/tournaments/PublicTournament";
+import { MySimulations } from "../features/simulation/MySimulations";
+import { SimulationEditor } from "../features/simulation/SimulationEditor";
+import { RetoAnalyzer } from "../features/simulation/RetoAnalyzer";
 import { RoleGuard } from "../components/auth/RoleGuard";
 import { SystemRol } from "../types/auth";
 
@@ -59,6 +62,18 @@ export const router = createBrowserRouter([
       {
         path: "mis-torneos",
         Component: () => <ParticipantOnly><MyTournaments /></ParticipantOnly>,
+      },
+      {
+        path: "simulaciones",
+        Component: () => <ParticipantOnly><MySimulations /></ParticipantOnly>,
+      },
+      {
+        path: "simulaciones/torneo/:tournamentId",
+        Component: () => <ParticipantOnly><SimulationEditor /></ParticipantOnly>,
+      },
+      {
+        path: "simulaciones/torneo/:tournamentId/retos",
+        Component: () => <ParticipantOnly><RetoAnalyzer /></ParticipantOnly>,
       },
 
       // ── Manager / Admin only ────────────────────────────────────────────

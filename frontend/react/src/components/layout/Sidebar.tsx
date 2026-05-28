@@ -13,6 +13,7 @@ import {
   LifeBuoy,
   Bot,
   Medal,
+  Sparkles,
 } from "lucide-react";
 import { SystemRol } from "../../types/auth";
 
@@ -33,6 +34,12 @@ const navItems = [
     name: "Mis Torneos",
     href: "/dashboard/mis-torneos",
     icon: Medal,
+    roles: [SystemRol.PARTICIPANTE],
+  },
+  {
+    name: "Mis Simulaciones",
+    href: "/dashboard/simulaciones",
+    icon: Sparkles,
     roles: [SystemRol.PARTICIPANTE],
   },
   {
