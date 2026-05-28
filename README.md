@@ -1,10 +1,11 @@
 
 
 
+# Zoids League
 
+Plataforma de gestión de torneos de robótica educativa. Permite registrar equipos, generar criterios de evaluación con IA y administrar competencias con formato KNOCKOUT. Construida con Django (backend), React (frontend) y PostgreSQL, todo orquestado con Docker.
 
-
-
+---
 
 # 1. Clonar el repo
 git clone https://github.com/JosefOreC/league
