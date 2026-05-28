@@ -32,8 +32,8 @@ curl -s -X POST http://localhost:8000/api/auth/login/ \
 
 # Prueba 2 — Análisis NLP
 curl -s -X POST http://localhost:8000/api/ia/analizar/ \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json"\
+  -H "Authorization: Bearer <token>"\
   -d '{"texto":"torneo de robotica para 8 equipos de secundaria nivel avanzado knockout"}' | python -m json.tool
 
 # Prueba 3 — Generación de criterios IA
