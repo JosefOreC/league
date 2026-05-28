@@ -44,12 +44,12 @@ services:
       - db
 
   frontend:
-    build: ./competencia/infrastructure/adapters/input/ui/react
+    build: ./frontend/react
 
     container_name: react_frontend
 
     volumes:
-      - ./competencia/infrastructure/adapters/input/ui/react:/app
+      - ./frontend/react:/app
       - /app/node_modules
 
     ports:
