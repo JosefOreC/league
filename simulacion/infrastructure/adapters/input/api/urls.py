@@ -13,5 +13,5 @@ urlpatterns = [
     path('analisis/componentes/', analizar_componentes, name='sim-analisis-componentes'),
     path('analisis/<str:participante_id>/<str:torneo_id>/', listar_analisis, name='sim-analisis-listar'),
     path('torneo/<str:tournament_id>/contexto/', contexto_torneo, name='sim-contexto'),
-    path('torneo/<str:tournament_id>/ejecutar/', ejecutar_simulacion, name='sim-ejecutar'),
+    path('torneo/<str:tournament_id>/simular/', ejecutar_simulacion, name='sim-ejecutar'),
 ]

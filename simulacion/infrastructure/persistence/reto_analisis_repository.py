@@ -50,51 +50,54 @@ def obtener_retos_del_torneo(torneo_id: str) -> List[dict]:
         return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
 
-def obtener_reto_con_criterios(reto_id: str) -> dict:
+def obtener_reto_con_criterios(torneo_id: str, caso: str) -> dict:
     with connection.cursor() as cursor:
         cursor.execute('''
             SELECT
-                r.id              AS reto_id,
-                r.titulo          AS reto_titulo,
-                r.descripcion     AS reto_descripcion,
-                r.caso,
-                r.torneo_id,
+                t.id              AS torneo_id,
+                t.name            AS reto_titulo,
+                t.description     AS reto_descripcion,
+                t.category        AS categoria,
                 c.id              AS criterio_id,
                 c.name            AS criterio_nombre,
                 c.description     AS criterio_descripcion,
                 c.value           AS peso,
                 c.min_value_qualification,
                 c.max_value_qualification,
-                t.category        AS categoria,
                 tr.validation_list
-            FROM simulacion_reto_generado r
+            FROM competencia_tournament t
             INNER JOIN competencia_criteria c
-                ON c.tournament_id = r.torneo_id
-            INNER JOIN competencia_tournament t
-                ON t.id = r.torneo_id
+                ON c.tournament_id = t.id
             INNER JOIN competencia_tournament_rule tr
                 ON tr.id = t.tournament_rule_id
-            WHERE r.id = %s
-              AND c.id = r.criterio_id
-        ''', [reto_id])
+            WHERE t.id = %s
+            ORDER BY c.value DESC
+        ''', [torneo_id])
         cols  = [col[0] for col in cursor.description]
         filas = [dict(zip(cols, row)) for row in cursor.fetchall()]
 
     if not filas:
         return {}
 
-    ctx = {k: filas[0][k] for k in (
-        'reto_id', 'reto_titulo', 'reto_descripcion',
-        'caso', 'torneo_id', 'categoria', 'validation_list',
-    )}
-    ctx['criterios'] = [
+    criterios_filtrados = [
         {k: f[k] for k in (
             'criterio_id', 'criterio_nombre', 'criterio_descripcion',
             'peso', 'min_value_qualification', 'max_value_qualification',
         )}
         for f in filas
+        if clasificar_criterio(f['criterio_nombre'], f['criterio_descripcion']) == caso
     ]
-    return ctx
+
+    return {
+        'reto_id':          torneo_id,
+        'reto_titulo':      filas[0]['reto_titulo'],
+        'reto_descripcion': filas[0]['reto_descripcion'],
+        'caso':             caso,
+        'torneo_id':        torneo_id,
+        'categoria':        filas[0]['categoria'],
+        'validation_list':  filas[0]['validation_list'],
+        'criterios':        criterios_filtrados,
+    }
 
 
 def guardar_analisis(datos: dict) -> AnalisisEntrega:
