@@ -18,6 +18,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+    # M1-01: healthcheck para que el backend espere a que Postgres acepte conexiones.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d league_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   backend:
     build: ./
 
@@ -40,8 +48,19 @@ services:
       DB_PORT: 5432
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
 
+    # M1-01: el backend solo arranca cuando la base de datos reporta healthy,
+    # evitando fallos de conexión silenciosos en el arranque.
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+    # M1-01: healthcheck del backend (comprueba que el puerto 8000 acepta conexiones).
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('localhost', 8000), 3).close()\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build: ./frontend/react

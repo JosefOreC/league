@@ -6,6 +6,7 @@ from ...domain.value_objects.enums.tournament_type import TournamentType
 from uuid import uuid4
 import math
 import random
+from django.db import transaction
 
 from ...domain.ports.team_repository import TeamRepository
 
@@ -40,11 +41,16 @@ class GenerateFixturesUseCase:
         else:
             raise ValueError(f"Tipo de torneo no soportado")
 
-        self.__match_repository.delete_by_tournament(tournament_id)
-        for m in matches:
-            self.__match_repository.save(m)
-            
-        self.__tournament_repository.update(tournament)
+        # M1-02: la regeneración de fixtures debe ser atómica. Si falla a mitad
+        # de la inserción, no deben quedar partidos huérfanos ni el torneo en
+        # estado inconsistente. delete + save loop + update se ejecutan o se
+        # revierten en bloque.
+        with transaction.atomic():
+            self.__match_repository.delete_by_tournament(tournament_id)
+            for m in matches:
+                self.__match_repository.save(m)
+
+            self.__tournament_repository.update(tournament)
 
         return [m.to_dict() for m in matches]
 
@@ -105,7 +111,7 @@ class GenerateFixturesUseCase:
             
             # Manejar BYES (si un equipo es None)
             if t1 is None or t2 is None:
-                match.set_es_bye(True)
+                match.set_bye(True)
                 match.set_estado("FINISHED")
                 ganador = t1 or t2
                 match.set_ganador_id(ganador)

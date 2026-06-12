@@ -61,7 +61,7 @@ class Match:
         self.__es_bye = value
     
     def set_estado(self, value):
-        self.__estado == value
+        self.__estado = value
     
     def set_ganador_id(self, value):
         self.__ganador_id = value

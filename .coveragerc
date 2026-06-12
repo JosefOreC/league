@@ -1,0 +1,28 @@
+# M3-02: configuración de cobertura de pruebas.
+# Uso:
+#   coverage run manage.py test
+#   coverage report
+#   coverage html   (genera htmlcov/)
+[run]
+source = .
+omit =
+    */migrations/*
+    */tests/*
+    */test_*.py
+    */__init__.py
+    config/asgi.py
+    config/wsgi.py
+    manage.py
+    */venv/*
+    */.venv/*
+
+[report]
+show_missing = True
+skip_covered = False
+# Objetivo inicial de cobertura (Wave 3 del plan FURPS+).
+fail_under = 60
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:

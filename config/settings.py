@@ -21,12 +21,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-v50ee$v908kp8p)$_dx87tw39y##gb)=bwg872q@txgf=4no2g'
+# M0-03: la clave se lee del entorno (DJANGO_SECRET_KEY). El valor por defecto
+# es una clave de desarrollo (prefijo 'django-insecure-') y NUNCA debe usarse en
+# producción: el despliegue real DEBE definir DJANGO_SECRET_KEY en su entorno.
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-v50ee$v908kp8p)$_dx87tw39y##gb)=bwg872q@txgf=4no2g',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# M0-03: DEBUG controlable por entorno; por defecto False (comportamiento actual).
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ["*"]
+# M0-04: ALLOWED_HOSTS configurable por entorno (lista separada por comas).
+# El valor por defecto '*' preserva el comportamiento actual para no romper
+# despliegues existentes; en producción DEBE restringirse vía DJANGO_ALLOWED_HOSTS
+# a los dominios reales (p. ej. "midominio.com,www.midominio.com").
+ALLOWED_HOSTS = [
+    h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()
+]
 
 
 # Application definition
@@ -155,3 +168,43 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+
+# M1-03: Logging estructurado.
+# Por defecto registra a consola (capturable por Docker/gunicorn). El nivel se
+# controla con LOG_LEVEL (WARNING en producción, DEBUG en desarrollo). Es una
+# configuración puramente aditiva: no altera el comportamiento de la aplicación.
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'WARNING').upper()
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': LOG_LEVEL,
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
