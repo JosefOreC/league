@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"d:/league\" config --list --show-origin)",
+      "Bash(git config *)",
+      "Bash(cmdkey /delete:git:https://github.com)",
+      "Bash(cmdkey /list)",
+      "Bash(findstr github *)",
+      "Bash(git -C \"d:/league\" config --global user.name)",
+      "Bash(git -C \"d:/league\" config --global user.email)"
+    ]
+  }
+}
