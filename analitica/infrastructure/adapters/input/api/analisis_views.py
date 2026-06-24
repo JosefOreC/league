@@ -178,7 +178,7 @@ def _reporte_individual_to_dict(reporte) -> dict:
 # ── HU-AN-01: Análisis Integral ────────────────────────────────────────────────
 
 @api_view(["GET"])
-#@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
 def get_analisis_integral(request, torneo_id: str):
     """
     GET /api/analitica/torneos/<torneo_id>/analisis-integral/
@@ -208,7 +208,7 @@ def get_analisis_integral(request, torneo_id: str):
 # ── HU-AN-02: Reporte de Desempeño Individual por Equipo ──────────────────────
 
 @api_view(["GET"])
-#@auth_required()
+@auth_required()
 def get_reporte_individual(request, torneo_id: str, equipo_id: str):
     """
     GET /api/analitica/torneos/<torneo_id>/equipos/<equipo_id>/reporte-individual/
@@ -310,7 +310,7 @@ def _tablero_inteligencia_to_dict(tablero) -> dict:
 
 
 @api_view(["GET"])
-#@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
 def get_tablero_inteligencia(request, torneo_id: str):
     """
     GET /api/analitica/torneos/<torneo_id>/tablero-inteligencia/
@@ -384,7 +384,7 @@ def _panel_docente_to_dict(panel) -> dict:
 
 
 @api_view(["GET"])
-#@auth_required()
+@auth_required()
 def get_panel_docente(request, torneo_id: str, equipo_id: str):
     """
     GET /api/analitica/torneos/<torneo_id>/equipos/<equipo_id>/panel-docente/
