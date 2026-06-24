@@ -41,7 +41,7 @@ class GenerateFixturesUseCase:
             raise ValueError(f"Tipo de torneo no soportado")
 
         self.__match_repository.delete_by_tournament(tournament_id)
-        for m in matches:
+        for m in reversed(matches):
             self.__match_repository.save(m)
             
         self.__tournament_repository.update(tournament)

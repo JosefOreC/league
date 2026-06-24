@@ -63,3 +63,13 @@ class DocenteNoVinculadoException(Exception):
         )
         self.docente_id = docente_id
         self.equipo_id = equipo_id
+
+
+class InstitucionSinEquiposException(Exception):
+    """Se lanza cuando la institución no tiene equipos participantes en el torneo solicitado."""
+    def __init__(self, inst_id: str, torneo_id: str):
+        super().__init__(
+            f"La institución no tiene equipos participantes en el torneo especificado."
+        )
+        self.inst_id = inst_id
+        self.torneo_id = torneo_id

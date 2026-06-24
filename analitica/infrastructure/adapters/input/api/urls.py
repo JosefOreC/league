@@ -4,6 +4,10 @@ from .analisis_views import (
     get_reporte_individual,
     get_tablero_inteligencia,
     get_panel_docente,
+    get_reporte_institucional,
+    get_sugerencias,
+    generar_certificados,
+    generar_resumen_ejecutivo,
 )
 
 urlpatterns = [
@@ -19,11 +23,35 @@ urlpatterns = [
         get_reporte_individual,
         name="reporte-individual",
     ),
+    # HU-AN-03: Reporte Institucional
+    path(
+        "instituciones/<str:inst_id>/reporte/",
+        get_reporte_institucional,
+        name="reporte-institucional",
+    ),
     # HU-AN-04: Tablero de Inteligencia para el Organizador
     path(
         "torneos/<str:torneo_id>/tablero-inteligencia/",
         get_tablero_inteligencia,
         name="tablero-inteligencia",
+    ),
+    # HU-AN-05: Sugerencias inteligentes de acción
+    path(
+        "torneos/<str:torneo_id>/sugerencias/",
+        get_sugerencias,
+        name="sugerencias",
+    ),
+    # HU-AN-06: Certificados y Reconocimientos
+    path(
+        "torneos/<str:torneo_id>/certificados/",
+        generar_certificados,
+        name="certificados",
+    ),
+    # HU-AN-07: Resumen Ejecutivo Automático (NLG)
+    path(
+        "torneos/<str:torneo_id>/resumen-ejecutivo/",
+        generar_resumen_ejecutivo,
+        name="resumen-ejecutivo",
     ),
     # HU-AN-08: Panel de Retroalimentación para Docentes
     path(

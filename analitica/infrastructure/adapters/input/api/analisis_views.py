@@ -10,6 +10,7 @@ Endpoints:
     GET /api/analitica/torneos/<torneo_id>/equipos/<equipo_id>/reporte-individual/ → HU-AN-02
     GET /api/analitica/torneos/<torneo_id>/tablero-inteligencia/                   → HU-AN-04
     GET /api/analitica/torneos/<torneo_id>/equipos/<equipo_id>/panel-docente/      → HU-AN-08
+    GET /api/analitica/instituciones/<inst_id>/reporte/                            → HU-AN-03
 """
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -25,6 +26,7 @@ from .....domain.exceptions import (
     AccesoNoAutorizadoException,
     EquipoNoEncontradoException,
     DocenteNoVinculadoException,
+    InstitucionSinEquiposException,
 )
 from .....infrastructure.repositories.analisis_integral_repository import (
     AnalisisIntegralRepositoryImpl,
@@ -50,6 +52,30 @@ from .....infrastructure.repositories.panel_docente_repository import (
 from .....application.use_cases.obtener_panel_docente_use_case import (
     ObtenerPanelDocenteUseCase,
 )
+from .....infrastructure.repositories.reporte_institucional_repository import (
+    ReporteInstitucionalRepositoryImpl,
+)
+from .....application.use_cases.generar_reporte_institucional_use_case import (
+    GenerarReporteInstitucionalUseCase,
+)
+from .....infrastructure.repositories.sugerencias_repository import (
+    SugerenciasRepositoryImpl,
+)
+from .....application.use_cases.generar_sugerencias_use_case import (
+    GenerarSugerenciasUseCase,
+)
+from .....infrastructure.repositories.certificados_repository import (
+    CertificadosRepositoryImpl,
+)
+from .....application.use_cases.generar_certificados_use_case import (
+    GenerarCertificadosUseCase,
+)
+from .....infrastructure.repositories.resumen_ejecutivo_repository import (
+    ResumenEjecutivoRepositoryImpl,
+)
+from .....application.use_cases.generar_resumen_ejecutivo_use_case import (
+    GenerarResumenEjecutivoUseCase,
+)
 
 # ── Excepción → código HTTP ────────────────────────────────────────────────────
 EXCEPTION_HTTP_MAP = {
@@ -59,6 +85,7 @@ EXCEPTION_HTTP_MAP = {
     AccesoNoAutorizadoException: status.HTTP_403_FORBIDDEN,
     EquipoNoEncontradoException: status.HTTP_404_NOT_FOUND,
     DocenteNoVinculadoException: status.HTTP_403_FORBIDDEN,
+    InstitucionSinEquiposException: status.HTTP_404_NOT_FOUND,
 }
 
 DOMAIN_EXCEPTIONS = tuple(EXCEPTION_HTTP_MAP.keys())
@@ -427,3 +454,329 @@ def get_panel_docente(request, torneo_id: str, equipo_id: str):
         )
 
     return Response(data, status=status.HTTP_200_OK)
+
+
+# ── HU-AN-03: Reporte Institucional ──────────────────────────────────────────
+
+def _reporte_institucional_to_dict(reporte) -> dict:
+    return {
+        "institucion_id": reporte.institucion_id,
+        "nombre_institucion": reporte.nombre_institucion,
+        "tipo": reporte.tipo,
+        "torneo_id": reporte.torneo_id,
+        "total_equipos_participantes": reporte.total_equipos_participantes,
+        "posiciones_obtenidas": [
+            {
+                "equipo_id": p.equipo_id,
+                "nombre_equipo": p.nombre_equipo,
+                "posicion_final": p.posicion_final,
+                "puntaje_acumulado": p.puntaje_acumulado,
+            }
+            for p in reporte.posiciones_obtenidas
+        ],
+        "puntaje_promedio_institucional": reporte.puntaje_promedio_institucional,
+        "mejor_posicion_lograda": reporte.mejor_posicion_lograda,
+        "criterio_mas_destacado": reporte.criterio_mas_destacado,
+    }
+
+
+def _reporte_institucional_historico_to_dict(reporte) -> dict:
+    return {
+        "institucion_id": reporte.institucion_id,
+        "nombre_institucion": reporte.nombre_institucion,
+        "tipo": reporte.tipo,
+        "evolucion_historica": [
+            {
+                "torneo_id": e.torneo_id,
+                "nombre_torneo": e.nombre_torneo,
+                "fecha": e.fecha,
+                "equipos": e.equipos,
+                "puntaje_promedio": e.puntaje_promedio,
+                "mejor_posicion": e.mejor_posicion,
+            }
+            for e in reporte.evolucion
+        ],
+    }
+
+
+def _generar_pdf_institucional(data: dict, inst_id: str):
+    from io import BytesIO
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    from django.http import HttpResponse
+
+    buffer = BytesIO()
+    doc    = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story  = []
+
+    story.append(Paragraph(f"Reporte Institucional — {data['nombre_institucion']}", styles['Title']))
+    story.append(Paragraph(f"Tipo: {data['tipo']}  |  ID: {data['institucion_id']}", styles['Normal']))
+    story.append(Spacer(1, 12))
+
+    if "evolucion_historica" in data:
+        story.append(Paragraph("Evolución Histórica", styles['Heading2']))
+        headers = ["Torneo", "Fecha", "Equipos", "Prom. Puntaje", "Mejor Posición"]
+        rows = [headers] + [
+            [e["nombre_torneo"], e["fecha"][:10], str(e["equipos"]),
+             f"{e['puntaje_promedio']:.2f}", str(e["mejor_posicion"])]
+            for e in data["evolucion_historica"]
+        ]
+    else:
+        story.append(Paragraph(f"Torneo ID: {data['torneo_id']}", styles['Normal']))
+        story.append(Paragraph(
+            f"Equipos: {data['total_equipos_participantes']}  |  "
+            f"Promedio: {data['puntaje_promedio_institucional']:.2f}  |  "
+            f"Mejor posición: {data['mejor_posicion_lograda']}  |  "
+            f"Criterio destacado: {data['criterio_mas_destacado']}",
+            styles['Normal'],
+        ))
+        story.append(Spacer(1, 12))
+        story.append(Paragraph("Equipos y Posiciones", styles['Heading2']))
+        headers = ["Equipo", "Posición Final", "Puntaje Acumulado"]
+        rows = [headers] + [
+            [p["nombre_equipo"], str(p["posicion_final"]), f"{p['puntaje_acumulado']:.4f}"]
+            for p in data["posiciones_obtenidas"]
+        ]
+
+    tabla = Table(rows)
+    tabla.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a2e')),
+        ('TEXTCOLOR',  (0, 0), (-1, 0), colors.white),
+        ('FONTNAME',   (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('GRID',       (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f0f0')]),
+    ]))
+    story.append(tabla)
+    doc.build(story)
+    buffer.seek(0)
+
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'attachment; filename="reporte_institucional_{inst_id}.pdf"'
+    )
+    return response
+
+
+@api_view(["GET"])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+def get_reporte_institucional(request, inst_id: str):
+    """
+    GET /api/analitica/instituciones/<inst_id>/reporte/
+    Query params:
+        torneo_id  (str)  — reporte de un torneo específico (requiere FINISHED)
+        historico  (bool) — reporte multi-torneo (historico=true)
+        formato    (str)  — PDF
+
+    Requiere rol: ADMIN o MANAGER.
+    """
+    torneo_id = request.query_params.get("torneo_id", None)
+    historico  = request.query_params.get("historico", "").lower() == "true"
+    formato    = request.query_params.get("formato", "").upper()
+
+    if not torneo_id and not historico:
+        return Response(
+            {"error": "Se requiere torneo_id o historico=true"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo     = ReporteInstitucionalRepositoryImpl()
+    use_case = GenerarReporteInstitucionalUseCase(repo)
+
+    try:
+        resultado = use_case.execute(
+            inst_id=inst_id,
+            torneo_id=torneo_id,
+            historico=historico,
+        )
+    except DOMAIN_EXCEPTIONS as exc:
+        return _handle_domain_exception(exc)
+    except Exception as exc:
+        return Response(
+            {"error": "Error interno del servidor.", "detail": str(exc)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    if historico:
+        data = _reporte_institucional_historico_to_dict(resultado)
+    else:
+        data = _reporte_institucional_to_dict(resultado)
+
+    if formato == "PDF":
+        return _generar_pdf_institucional(data, inst_id)
+
+    return Response(data, status=status.HTTP_200_OK)
+
+
+# ── HU-AN-05: Sugerencias inteligentes de acción ─────────────────────────────
+
+def _sugerencia_to_dict(s) -> dict:
+    return {
+        "id":              s.id,
+        "tipo":            s.tipo,
+        "descripcion":     s.descripcion,
+        "accion_sugerida": s.accion_sugerida,
+        "entidad_ref_id":  s.entidad_ref_id,
+        "severidad":       s.severidad,
+        "estado":          s.estado,
+        "generado_en":     s.generado_en,
+    }
+
+
+@api_view(["GET"])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+def get_sugerencias(request, torneo_id: str):
+    """
+    GET /api/analitica/torneos/<torneo_id>/sugerencias/
+
+    Evalúa el estado operativo del torneo y retorna sugerencias de acción:
+        REPROGRAMACION  → >= 3 partidos PENDING con retraso > 20 min.
+        AJUSTE_CRITERIO → criterio con stddev > 40 o < 2 (solo FINISHED).
+        APOYO_EQUIPO    → equipo en percentil <= 10 (solo FINISHED).
+
+    Requiere rol: ADMIN o MANAGER.
+    """
+    repo     = SugerenciasRepositoryImpl()
+    use_case = GenerarSugerenciasUseCase(repo)
+
+    try:
+        resultado = use_case.execute(torneo_id=torneo_id)
+    except DOMAIN_EXCEPTIONS as exc:
+        return _handle_domain_exception(exc)
+    except Exception as exc:
+        return Response(
+            {"error": "Error interno del servidor.", "detail": str(exc)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    data: dict = {
+        "torneo_id":   torneo_id,
+        "sugerencias": [_sugerencia_to_dict(s) for s in resultado["sugerencias"]],
+    }
+    if "mensaje" in resultado:
+        data["mensaje"] = resultado["mensaje"]
+
+    return Response(data, status=status.HTTP_200_OK)
+
+
+# ── HU-AN-06: Certificados y Reconocimientos ──────────────────────────────────
+
+@api_view(["POST"])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+def generar_certificados(request, torneo_id: str):
+    """
+    POST /api/analitica/torneos/<torneo_id>/certificados/
+    Query params:
+        tipo      (str, requerido) — PARTICIPACION | GANADOR
+        equipo_id (str, requerido si tipo=GANADOR)
+
+    PARTICIPACION → ZIP con un PDF por participante autorizado.
+        Cabeceras extra: X-Total-Generados, X-Excluidos-Count
+    GANADOR       → PDF del diploma para el equipo con medalla.
+
+    Requiere rol: ADMIN o MANAGER.
+    """
+    from django.http import HttpResponse
+    import json as _json
+
+    tipo      = request.query_params.get("tipo", "").upper()
+    equipo_id = request.query_params.get("equipo_id", None)
+
+    if tipo not in ("PARTICIPACION", "GANADOR"):
+        return Response(
+            {"error": "El parámetro 'tipo' debe ser PARTICIPACION o GANADOR"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if tipo == "GANADOR" and not equipo_id:
+        return Response(
+            {"error": "El parámetro 'equipo_id' es requerido para tipo=GANADOR"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo     = CertificadosRepositoryImpl()
+    use_case = GenerarCertificadosUseCase(repo)
+
+    try:
+        if tipo == "PARTICIPACION":
+            resultado = use_case.ejecutar_participacion(torneo_id)
+
+            response = HttpResponse(
+                resultado["zip_buffer"].read(),
+                content_type="application/zip",
+            )
+            response["Content-Disposition"] = (
+                f'attachment; filename="certificados_{torneo_id}.zip"'
+            )
+            response["X-Total-Generados"]  = str(resultado["total_generados"])
+            response["X-Excluidos-Count"]  = str(len(resultado["excluidos"]))
+            response["X-Excluidos"]        = _json.dumps(resultado["excluidos"])
+            return response
+
+        else:  # GANADOR
+            resultado = use_case.ejecutar_ganador(torneo_id, equipo_id)
+
+            response = HttpResponse(
+                resultado["pdf_buffer"].read(),
+                content_type="application/pdf",
+            )
+            response["Content-Disposition"] = (
+                f'attachment; filename="diploma_{equipo_id}.pdf"'
+            )
+            response["X-Medalla"]              = resultado["medalla"]
+            response["X-Codigo-Verificacion"]  = resultado["codigo_verificacion"]
+            return response
+
+    except DOMAIN_EXCEPTIONS as exc:
+        return _handle_domain_exception(exc)
+    except Exception as exc:
+        return Response(
+            {"error": "Error interno del servidor.", "detail": str(exc)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+# ── HU-AN-07: Resumen Ejecutivo Automático (NLG) ─────────────────────────────
+
+@api_view(["POST"])
+@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+def generar_resumen_ejecutivo(request, torneo_id: str):
+    """
+    POST /api/analitica/torneos/<torneo_id>/resumen-ejecutivo/
+    Query param opcional: ?tono=FORMAL|DIVULGATIVO|CELEBRATORIO  (default DIVULGATIVO)
+
+    Genera un resumen narrativo en español (300–600 palabras) por plantillas,
+    insertando métricas reales del torneo. Cada llamada crea una nueva versión.
+
+    Requiere rol: ADMIN o MANAGER.
+    """
+    tono = request.query_params.get("tono", "DIVULGATIVO")
+
+    repo     = ResumenEjecutivoRepositoryImpl()
+    sug_repo = SugerenciasRepositoryImpl()
+    use_case = GenerarResumenEjecutivoUseCase(repo, sug_repo)
+
+    try:
+        resumen = use_case.execute(torneo_id=torneo_id, tono=tono)
+    except DOMAIN_EXCEPTIONS as exc:
+        return _handle_domain_exception(exc)
+    except Exception as exc:
+        return Response(
+            {"error": "Error interno del servidor.", "detail": str(exc)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return Response(
+        {
+            "id":              resumen.id,
+            "torneo_id":       resumen.torneo_id,
+            "resumen_texto":   resumen.resumen_texto,
+            "tono":            resumen.tono,
+            "version":         resumen.version,
+            "metricas_usadas": resumen.metricas_usadas,
+            "num_palabras":    len(resumen.resumen_texto.split()),
+            "generado_en":     resumen.generado_en,
+        },
+        status=status.HTTP_200_OK,
+    )

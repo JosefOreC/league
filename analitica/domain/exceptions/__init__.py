@@ -5,6 +5,7 @@ from .analitica_exceptions import (
     TorneoNoEncontradoException,
     EquipoNoEncontradoException,
     DocenteNoVinculadoException,
+    InstitucionSinEquiposException,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "TorneoNoEncontradoException",
     "EquipoNoEncontradoException",
     "DocenteNoVinculadoException",
+    "InstitucionSinEquiposException",
 ]
