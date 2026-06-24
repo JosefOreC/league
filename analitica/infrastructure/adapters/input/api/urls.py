@@ -1,6 +1,13 @@
 from django.urls import path
-from .views import test
+from .analisis_views import (
+    get_analisis_integral,
+)
 
 urlpatterns = [
-    path("", test),
+    # HU-AN-01: Análisis Integral de Resultados del Torneo
+    path(
+        "torneos/<str:torneo_id>/analisis-integral/",
+        get_analisis_integral,
+        name="analisis-integral",
+    ),
 ]
