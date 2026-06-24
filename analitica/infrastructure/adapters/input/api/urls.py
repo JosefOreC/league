@@ -3,6 +3,7 @@ from .analisis_views import (
     get_analisis_integral,
     get_reporte_individual,
     get_tablero_inteligencia,
+    get_panel_docente,
 )
 
 urlpatterns = [
@@ -23,5 +24,11 @@ urlpatterns = [
         "torneos/<str:torneo_id>/tablero-inteligencia/",
         get_tablero_inteligencia,
         name="tablero-inteligencia",
+    ),
+    # HU-AN-08: Panel de Retroalimentación para Docentes
+    path(
+        "torneos/<str:torneo_id>/equipos/<str:equipo_id>/panel-docente/",
+        get_panel_docente,
+        name="panel-docente",
     ),
 ]

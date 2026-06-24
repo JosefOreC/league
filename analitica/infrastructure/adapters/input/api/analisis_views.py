@@ -9,6 +9,7 @@ Endpoints:
     GET /api/analitica/torneos/<torneo_id>/analisis-integral/                      → HU-AN-01
     GET /api/analitica/torneos/<torneo_id>/equipos/<equipo_id>/reporte-individual/ → HU-AN-02
     GET /api/analitica/torneos/<torneo_id>/tablero-inteligencia/                   → HU-AN-04
+    GET /api/analitica/torneos/<torneo_id>/equipos/<equipo_id>/panel-docente/      → HU-AN-08
 """
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -42,6 +43,12 @@ from .....infrastructure.repositories.tablero_inteligencia_repository import (
 )
 from .....application.use_cases.obtener_tablero_inteligencia_use_case import (
     ObtenerTableroInteligenciaUseCase,
+)
+from .....infrastructure.repositories.panel_docente_repository import (
+    PanelDocenteRepositoryImpl,
+)
+from .....application.use_cases.obtener_panel_docente_use_case import (
+    ObtenerPanelDocenteUseCase,
 )
 
 # ── Excepción → código HTTP ────────────────────────────────────────────────────
@@ -326,3 +333,97 @@ def get_tablero_inteligencia(request, torneo_id: str):
         )
 
     return Response(_tablero_inteligencia_to_dict(tablero), status=status.HTTP_200_OK)
+
+
+# ── HU-AN-08: Panel de Retroalimentación para Docentes ───────────────────────
+
+def _panel_docente_to_dict(panel) -> dict:
+    """Serializa la entidad PanelDocente a dict JSON-serializable."""
+    return {
+        "torneo_id": panel.torneo_id,
+        "torneo_nombre": panel.torneo_nombre,
+        "estado_panel": panel.estado_panel.value,
+        "advertencia": panel.advertencia,
+        "docente": {
+            "docente_asesor_id": panel.docente_asesor_id,
+            "nombre": panel.docente_nombre,
+        },
+        "equipo": {
+            "equipo_id": panel.equipo_id,
+            "nombre": panel.equipo_nombre,
+            "posicion_final": panel.posicion_final,
+            "medalla": panel.medalla,
+            "puntaje_total_acumulado": round(panel.puntaje_total_acumulado, 4),
+            "total_partidos_jugados": panel.total_partidos_jugados,
+        },
+        "criterios": [
+            {
+                "criterio_id": c.criterio_id,
+                "criterio_nombre": c.criterio_nombre,
+                "peso": round(c.peso, 4),
+                "promedio_equipo": round(c.promedio_equipo, 4),
+                "promedio_torneo": round(c.promedio_torneo, 4),
+                "percentil": c.percentil,
+                "maximo_torneo": round(c.maximo_torneo, 4),
+                "minimo_torneo": round(c.minimo_torneo, 4),
+            }
+            for c in panel.criterios
+        ],
+        "recomendaciones": [
+            {
+                "criterio_id": r.criterio_id,
+                "criterio_nombre": r.criterio_nombre,
+                "tipo": r.tipo.value,
+                "percentil": r.percentil,
+                "descripcion": r.descripcion,
+                "acciones_sugeridas": r.acciones_sugeridas,
+            }
+            for r in panel.recomendaciones
+        ],
+    }
+
+
+@api_view(["GET"])
+#@auth_required()
+def get_panel_docente(request, torneo_id: str, equipo_id: str):
+    """
+    GET /api/analitica/torneos/<torneo_id>/equipos/<equipo_id>/panel-docente/
+    Query param opcional: ?formato=PDF (mismo comportamiento que HU-AN-02)
+
+    Requiere: docente_asesor vinculado al equipo (o ADMIN/MANAGER).
+    Si torneo IN_PROGRESS con ≥ 2 partidos: retorna estado_panel=PRELIMINAR + advertencia.
+    Si torneo FINISHED: retorna estado_panel=DEFINITIVO.
+    """
+    formato = request.query_params.get("formato", "").upper()
+
+    user_data = getattr(request, "user_data", {})
+    usuario_id = user_data.get("user_id", "")
+    usuario_rol = user_data.get("rol", "admin")  # Default permisivo sin auth activo
+
+    repo = PanelDocenteRepositoryImpl()
+    use_case = ObtenerPanelDocenteUseCase(repo)
+
+    try:
+        panel = use_case.execute(
+            torneo_id=torneo_id,
+            equipo_id=equipo_id,
+            usuario_id=usuario_id,
+            usuario_rol=usuario_rol,
+        )
+    except DOMAIN_EXCEPTIONS as exc:
+        return _handle_domain_exception(exc)
+    except Exception as exc:
+        return Response(
+            {"error": "Error interno del servidor.", "detail": str(exc)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    data = _panel_docente_to_dict(panel)
+
+    if formato == "PDF":
+        return Response(
+            {"mensaje": "PDF en construcción", "data": data},
+            status=status.HTTP_200_OK,
+        )
+
+    return Response(data, status=status.HTTP_200_OK)
