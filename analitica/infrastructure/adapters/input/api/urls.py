@@ -2,6 +2,7 @@ from django.urls import path
 from .analisis_views import (
     get_analisis_integral,
     get_reporte_individual,
+    get_tablero_inteligencia,
 )
 
 urlpatterns = [
@@ -16,5 +17,11 @@ urlpatterns = [
         "torneos/<str:torneo_id>/equipos/<str:equipo_id>/reporte-individual/",
         get_reporte_individual,
         name="reporte-individual",
+    ),
+    # HU-AN-04: Tablero de Inteligencia para el Organizador
+    path(
+        "torneos/<str:torneo_id>/tablero-inteligencia/",
+        get_tablero_inteligencia,
+        name="tablero-inteligencia",
     ),
 ]

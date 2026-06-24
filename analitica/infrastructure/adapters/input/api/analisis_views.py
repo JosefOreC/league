@@ -8,6 +8,7 @@ Las excepciones de dominio son mapeadas a HTTP mediante EXCEPTION_HTTP_MAP.
 Endpoints:
     GET /api/analitica/torneos/<torneo_id>/analisis-integral/                      → HU-AN-01
     GET /api/analitica/torneos/<torneo_id>/equipos/<equipo_id>/reporte-individual/ → HU-AN-02
+    GET /api/analitica/torneos/<torneo_id>/tablero-inteligencia/                   → HU-AN-04
 """
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -35,6 +36,12 @@ from .....infrastructure.repositories.reporte_individual_repository import (
 )
 from .....application.use_cases.generar_reporte_individual_use_case import (
     GenerarReporteIndividualUseCase,
+)
+from .....infrastructure.repositories.tablero_inteligencia_repository import (
+    TableroInteligenciaRepositoryImpl,
+)
+from .....application.use_cases.obtener_tablero_inteligencia_use_case import (
+    ObtenerTableroInteligenciaUseCase,
 )
 
 # ── Excepción → código HTTP ────────────────────────────────────────────────────
@@ -238,3 +245,84 @@ def get_reporte_individual(request, torneo_id: str, equipo_id: str):
         )
 
     return Response(data, status=status.HTTP_200_OK)
+
+
+# ── HU-AN-04: Tablero de Inteligencia para el Organizador ─────────────────────
+
+def _tablero_inteligencia_to_dict(tablero) -> dict:
+    """Serializa la entidad TableroInteligencia a dict JSON-serializable."""
+    return {
+        "torneo_id": tablero.torneo_id,
+        "torneo_nombre": tablero.torneo_nombre,
+        "estado_torneo": tablero.estado_torneo,
+        "metricas": {
+            "total_equipos": tablero.total_equipos,
+            "total_partidos": tablero.total_partidos,
+            "partidos_finalizados": tablero.partidos_finalizados,
+            "partidos_pendientes": tablero.partidos_pendientes,
+            "partidos_en_progreso": tablero.partidos_en_progreso,
+            "porcentaje_avance": tablero.porcentaje_avance,
+        },
+        "top_3": [
+            {
+                "equipo_id": e.equipo_id,
+                "equipo_nombre": e.equipo_nombre,
+                "posicion_actual": e.posicion_actual,
+                "puntaje_acumulado": round(e.puntaje_acumulado, 4),
+                "partidos_jugados": e.partidos_jugados,
+                "victorias": e.victorias,
+                "medalla": e.medalla,
+            }
+            for e in tablero.top_3
+        ],
+        "partidos_proximos": [
+            {
+                "partido_id": p.partido_id,
+                "ronda": p.ronda,
+                "equipo_local_id": p.equipo_local_id,
+                "equipo_local_nombre": p.equipo_local_nombre,
+                "equipo_visitante_id": p.equipo_visitante_id,
+                "equipo_visitante_nombre": p.equipo_visitante_nombre,
+                "estado": p.estado,
+                "fecha_programada": p.fecha_programada,
+                "minutos_retraso": p.minutos_retraso,
+            }
+            for p in tablero.partidos_proximos
+        ],
+        "alertas_activas": [
+            {
+                "tipo": a.tipo.value,
+                "severidad": a.severidad.value,
+                "mensaje": a.mensaje,
+                "entidad_ref_id": a.entidad_ref_id,
+                "minutos_retraso": a.minutos_retraso,
+            }
+            for a in tablero.alertas_activas
+        ],
+    }
+
+
+@api_view(["GET"])
+#@auth_required([SystemRol.ADMIN, SystemRol.MANAGER])
+def get_tablero_inteligencia(request, torneo_id: str):
+    """
+    GET /api/analitica/torneos/<torneo_id>/tablero-inteligencia/
+
+    Tiempo de respuesta objetivo: < 1s.
+    Disponible en estado IN_PROGRESS y FINISHED (no DRAFT).
+    Requiere rol: ADMIN o MANAGER (organizador del torneo).
+    """
+    repo = TableroInteligenciaRepositoryImpl()
+    use_case = ObtenerTableroInteligenciaUseCase(repo)
+
+    try:
+        tablero = use_case.execute(torneo_id=torneo_id)
+    except DOMAIN_EXCEPTIONS as exc:
+        return _handle_domain_exception(exc)
+    except Exception as exc:
+        return Response(
+            {"error": "Error interno del servidor.", "detail": str(exc)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return Response(_tablero_inteligencia_to_dict(tablero), status=status.HTTP_200_OK)
