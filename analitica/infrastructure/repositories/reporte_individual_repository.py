@@ -1,4 +1,4 @@
-"""
+﻿"""
 Implementación concreta del repositorio de Reporte Individual.
 Capa: infrastructure/repositories/
 Implementa IReporteIndividualRepository usando Django ORM + SQL raw.
@@ -140,7 +140,7 @@ class ReporteIndividualRepositoryImpl(IReporteIndividualRepository):
                 WHERE p2.tournament_id = %s
                   AND mr2.estado_resultado = 'DEFINITIVE'
                   AND p2.es_bye = FALSE
-                  AND p2.estado = 'FINISHED'
+                  AND p2.estado = 'finalized'
             )                                   AS promedio_torneo
         FROM competencia_team e
         INNER JOIN competencia_tournament t ON t.id = e.tournament_id
@@ -189,7 +189,7 @@ class ReporteIndividualRepositoryImpl(IReporteIndividualRepository):
             WHERE p.tournament_id = %s
               AND mr.estado_resultado = 'DEFINITIVE'
               AND p.es_bye = FALSE
-              AND p.estado = 'FINISHED'
+              AND p.estado = 'finalized'
             GROUP BY mr.match_id, mr.equipo_id
         )
         SELECT
@@ -218,7 +218,7 @@ class ReporteIndividualRepositoryImpl(IReporteIndividualRepository):
         WHERE p.tournament_id = %s
           AND (p.equipo_local_id = %s OR p.equipo_visitante_id = %s)
           AND p.es_bye = FALSE
-          AND p.estado = 'FINISHED'
+          AND p.estado = 'finalized'
         ORDER BY p.ronda ASC
         """
         params = [
@@ -273,7 +273,7 @@ class ReporteIndividualRepositoryImpl(IReporteIndividualRepository):
                   AND p2.tournament_id = %s
                   AND mr2.estado_resultado = 'DEFINITIVE'
                   AND p2.es_bye = FALSE
-                  AND p2.estado = 'FINISHED'
+                  AND p2.estado = 'finalized'
             )                               AS promedio_torneo
         FROM competencia_criteria c
         INNER JOIN competencia_match_result mr ON mr.criterio_id = c.id
@@ -282,7 +282,7 @@ class ReporteIndividualRepositoryImpl(IReporteIndividualRepository):
           AND c.tournament_id = %s
           AND mr.estado_resultado = 'DEFINITIVE'
           AND p.es_bye = FALSE
-          AND p.estado = 'FINISHED'
+          AND p.estado = 'finalized'
           AND p.tournament_id = %s
         GROUP BY c.id, c.name, c.value
         ORDER BY c.value DESC
@@ -329,7 +329,7 @@ class ReporteIndividualRepositoryImpl(IReporteIndividualRepository):
           AND p.tournament_id = %s
           AND mr.estado_resultado = 'DEFINITIVE'
           AND p.es_bye = FALSE
-          AND p.estado = 'FINISHED'
+          AND p.estado = 'finalized'
         GROUP BY p.ronda
         ORDER BY p.ronda ASC
         """

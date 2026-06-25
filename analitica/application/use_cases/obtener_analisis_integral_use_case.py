@@ -1,4 +1,4 @@
-"""
+﻿"""
 Use Case: ObtenerAnalisisIntegralUseCase — HU-AN-01
 Capa: application/
 Importa SOLO interfaces del domain/. NO importa nada de infrastructure/.
@@ -22,7 +22,7 @@ class ObtenerAnalisisIntegralUseCase:
 
     Reglas de negocio:
         1. El torneo debe existir.
-        2. El torneo debe estar en estado 'FINISHED'.
+        2. El torneo debe estar en estado 'finalized'.
         3. Deben existir resultados con estado 'DEFINITIVO'.
         4. (Opcional) Si se pasa `categoria`, filtra equipos de esa categoría.
     """
@@ -47,7 +47,7 @@ class ObtenerAnalisisIntegralUseCase:
 
         Raises:
             TorneoNoEncontradoException: Si el torneo no existe (→ 404).
-            TorneoNoFinalizadoException: Si el torneo no está FINISHED (→ 409).
+            TorneoNoFinalizadoException: Si el torneo no está finalized (→ 409).
             SinResultadosDefinitivosException: Si no hay resultados DEFINITIVO (→ 422).
         """
         # Normalizar categoría
@@ -62,8 +62,8 @@ class ObtenerAnalisisIntegralUseCase:
         if estado is None:
             raise TorneoNoEncontradoException(torneo_id)
 
-        # 2. Verificar que el torneo está FINISHED
-        if estado != "FINISHED":
+        # 2. Verificar que el torneo está finalized
+        if estado != "finalized":
             raise TorneoNoFinalizadoException(torneo_id, estado)
 
         # 3. Obtener análisis (la query detecta si hay resultados DEFINITIVO)

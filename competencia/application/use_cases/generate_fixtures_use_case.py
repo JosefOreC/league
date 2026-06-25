@@ -1,4 +1,4 @@
-from ...domain.ports.match_repository import MatchRepository
+﻿from ...domain.ports.match_repository import MatchRepository
 from ...domain.ports.tournament_repository import TournamentRepository
 from ...domain.entities.match import Match
 from ...domain.value_objects.enums.tournament_state import TournamentState
@@ -106,7 +106,7 @@ class GenerateFixturesUseCase:
             # Manejar BYES (si un equipo es None)
             if t1 is None or t2 is None:
                 match.set_es_bye(True)
-                match.set_estado("FINISHED")
+                match.set_estado("finalized")
                 ganador = t1 or t2
                 match.set_ganador_id(ganador)
                 
@@ -175,7 +175,7 @@ class GenerateFixturesUseCase:
                         equipo_local_id=t1 or t2,
                         equipo_visitante_id=None,
                         es_descanso=True,
-                        estado="FINISHED",
+                        estado="finalized",
                         fase="ROUND_ROBIN"
                     )
                     matches.append(match)

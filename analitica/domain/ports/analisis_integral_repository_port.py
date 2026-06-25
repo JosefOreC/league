@@ -1,4 +1,4 @@
-"""
+﻿"""
 Puerto (interfaz) del repositorio de Análisis Integral.
 El domain define el contrato; la infraestructura lo implementa.
 No importa nada de application/ ni infrastructure/.
@@ -35,7 +35,7 @@ class IAnalisisIntegralRepository(ABC):
     @abstractmethod
     def obtener_estado_torneo(self, torneo_id: str) -> Optional[str]:
         """
-        Retorna el estado del torneo ('DRAFT' | 'IN_PROGRESS' | 'FINISHED')
+        Retorna el estado del torneo ('DRAFT' | 'IN_PROGRESS' | 'finalized')
         o None si no existe.
         """
         ...

@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 
 class TournamentRuleModel(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
@@ -193,7 +193,7 @@ class MatchModel(models.Model):
     es_descanso = models.BooleanField(default=False)
     grupo = models.ForeignKey(GroupModel, on_delete=models.SET_NULL, null=True, related_name="matches")
     fase = models.CharField(max_length=50, null=True, blank=True) # GRUPOS | FINAL
-    estado = models.CharField(max_length=50, default="PENDING") # PENDING | IN_PROGRESS | FINISHED | BYE
+    estado = models.CharField(max_length=50, default="PENDING") # PENDING | IN_PROGRESS | finalized | BYE
     ganador_id = models.CharField(max_length=36, null=True, blank=True)
     partido_siguiente = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name="partidos_anteriores")
     fecha_programada = models.DateTimeField(null=True, blank=True)

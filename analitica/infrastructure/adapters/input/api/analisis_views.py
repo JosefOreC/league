@@ -1,4 +1,4 @@
-"""
+﻿"""
 Controlador de Analítica — infrastructure/adapters/input/api/analisis_views.py
 Capa: infrastructure/
 Responsabilidad: parsear parámetros HTTP, llamar al use case, retornar respuesta JSON.
@@ -343,7 +343,7 @@ def get_tablero_inteligencia(request, torneo_id: str):
     GET /api/analitica/torneos/<torneo_id>/tablero-inteligencia/
 
     Tiempo de respuesta objetivo: < 1s.
-    Disponible en estado IN_PROGRESS y FINISHED (no DRAFT).
+    Disponible en estado IN_PROGRESS y finalized (no DRAFT).
     Requiere rol: ADMIN o MANAGER (organizador del torneo).
     """
     repo = TableroInteligenciaRepositoryImpl()
@@ -419,7 +419,7 @@ def get_panel_docente(request, torneo_id: str, equipo_id: str):
 
     Requiere: docente_asesor vinculado al equipo (o ADMIN/MANAGER).
     Si torneo IN_PROGRESS con ≥ 2 partidos: retorna estado_panel=PRELIMINAR + advertencia.
-    Si torneo FINISHED: retorna estado_panel=DEFINITIVO.
+    Si torneo finalized: retorna estado_panel=DEFINITIVO.
     """
     formato = request.query_params.get("formato", "").upper()
 
@@ -566,7 +566,7 @@ def get_reporte_institucional(request, inst_id: str):
     """
     GET /api/analitica/instituciones/<inst_id>/reporte/
     Query params:
-        torneo_id  (str)  — reporte de un torneo específico (requiere FINISHED)
+        torneo_id  (str)  — reporte de un torneo específico (requiere finalized)
         historico  (bool) — reporte multi-torneo (historico=true)
         formato    (str)  — PDF
 
@@ -633,8 +633,8 @@ def get_sugerencias(request, torneo_id: str):
 
     Evalúa el estado operativo del torneo y retorna sugerencias de acción:
         REPROGRAMACION  → >= 3 partidos PENDING con retraso > 20 min.
-        AJUSTE_CRITERIO → criterio con stddev > 40 o < 2 (solo FINISHED).
-        APOYO_EQUIPO    → equipo en percentil <= 10 (solo FINISHED).
+        AJUSTE_CRITERIO → criterio con stddev > 40 o < 2 (solo finalized).
+        APOYO_EQUIPO    → equipo en percentil <= 10 (solo finalized).
 
     Requiere rol: ADMIN o MANAGER.
     """

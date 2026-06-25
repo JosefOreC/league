@@ -1,4 +1,4 @@
-"""
+﻿"""
 Implementación concreta del repositorio de Análisis Integral.
 Capa: infrastructure/repositories/
 Implementa IAnalisisIntegralRepository usando Django ORM + SQL raw con CTEs.
@@ -75,7 +75,7 @@ class AnalisisIntegralRepositoryImpl(IAnalisisIntegralRepository):
             FROM competencia_match p
             WHERE p.tournament_id = %s
               AND p.es_bye = FALSE
-              AND p.estado = 'FINISHED'
+              AND p.estado = 'finalized'
         ),
         resultados_definitivos AS (
             -- Resultados definitivos por equipo y partido
@@ -242,7 +242,7 @@ class AnalisisIntegralRepositoryImpl(IAnalisisIntegralRepository):
         WHERE c.tournament_id = %s
           AND mr.estado_resultado = 'DEFINITIVE'
           AND p.es_bye = FALSE
-          AND p.estado = 'FINISHED'
+          AND p.estado = 'finalized'
           {categoria_filter}
         GROUP BY c.id, c.name, c.value
         ORDER BY c.value DESC

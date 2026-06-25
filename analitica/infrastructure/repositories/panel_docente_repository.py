@@ -1,4 +1,4 @@
-"""
+﻿"""
 Implementación concreta del repositorio de Panel Docente.
 Capa: infrastructure/repositories/
 Implementa IPanelDocenteRepository.
@@ -14,7 +14,7 @@ Tablas utilizadas (sin crear nuevas):
     competencia_match           — conteo de partidos finalizados
     competencia_match_result    — puntajes por criterio
     competencia_criteria        — nombre y peso del criterio
-    competencia_final_ranking   — posición y medalla (si FINISHED)
+    competencia_final_ranking   — posición y medalla (si finalized)
 
 -- INDEX HINT: competencia_match(tournament_id, estado) → conteo de partidos
 -- INDEX HINT: competencia_match_result(criterio_id, estado_resultado) → percentil
@@ -45,7 +45,7 @@ class PanelDocenteRepositoryImpl(IPanelDocenteRepository):
         from competencia.infrastructure.adapters.output.models import MatchModel
         return MatchModel.objects.filter(
             tournament_id=torneo_id,
-            estado="FINISHED",
+            estado="finalized",
             es_bye=False,
         ).count()
 
@@ -95,7 +95,7 @@ class PanelDocenteRepositoryImpl(IPanelDocenteRepository):
                 FROM competencia_match p2
                 WHERE p2.tournament_id = %s
                   AND (p2.equipo_local_id = e.id OR p2.equipo_visitante_id = e.id)
-                  AND p2.estado = 'FINISHED'
+                  AND p2.estado = 'finalized'
                   AND p2.es_bye = FALSE
             )                                   AS partidos_jugados
         FROM competencia_team e
@@ -154,7 +154,7 @@ class PanelDocenteRepositoryImpl(IPanelDocenteRepository):
             WHERE p.tournament_id = %s
               AND mr.estado_resultado = 'DEFINITIVE'
               AND p.es_bye = FALSE
-              AND p.estado = 'FINISHED'
+              AND p.estado = 'finalized'
             GROUP BY mr.criterio_id, mr.equipo_id
         ),
         ranking_con_percentil AS (
@@ -212,7 +212,7 @@ class PanelDocenteRepositoryImpl(IPanelDocenteRepository):
             WHERE p.tournament_id = %s
               AND mr.estado_resultado = 'DEFINITIVE'
               AND p.es_bye = FALSE
-              AND p.estado = 'FINISHED'
+              AND p.estado = 'finalized'
             GROUP BY mr.criterio_id, mr.equipo_id
         ),
         ranking_con_percentil AS (

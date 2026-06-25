@@ -1,4 +1,4 @@
-"""
+﻿"""
 Comando de datos de prueba para el módulo de Analítica (MVP3).
 
 Inserta un torneo FINALIZADO completo y coherente para poder visualizar
@@ -12,7 +12,7 @@ IDs fijos para que coincidan con los enlaces del frontend:
     torneo_id = "1"
     equipo campeón = "1"  (RoboChampions)
 
-NOTA: Los use cases de analítica esperan state == "FINISHED" y
+NOTA: Los use cases de analítica esperan state == "finalized" y
       estado_resultado == "DEFINITIVE" (en inglés), por eso el seed usa
       esos valores literales.
 """
@@ -90,14 +90,14 @@ class Command(BaseCommand):
             access_type="PUBLIC", validation_list=[], created_at=now, updated_at=now,
         )
 
-        # ── Torneo (FINISHED) ────────────────────────────────────────────────
+        # ── Torneo (finalized) ────────────────────────────────────────────────
         torneo = TournamentModel.objects.create(
             id=TORNEO_ID,
             name="Torneo Regional de Robótica 2024",
             description="Torneo demo para visualizar el módulo de analítica MVP3.",
             date_start=now - timedelta(days=30),
             date_end=now - timedelta(days=2),
-            state="FINISHED",
+            state="finalized",
             category="constructor",
             creator_user_id="seed",
             tournament_rule=rule,
@@ -168,7 +168,7 @@ class Command(BaseCommand):
                     id=mid, tournament=torneo, ronda=ronda, posicion_en_ronda=pos,
                     equipo_local=equipos[local], equipo_visitante=equipos[visit],
                     es_bye=False, es_descanso=False, fase="GRUPOS",
-                    estado="FINISHED",
+                    estado="finalized",
                     fecha_programada=now - timedelta(days=20 - ronda),
                 )
                 punt = {}
@@ -213,7 +213,7 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(self.style.SUCCESS("\n✅ Torneo demo creado correctamente.\n"))
-        self.stdout.write(f"   Torneo ID:   {TORNEO_ID}  (state=FINISHED)")
+        self.stdout.write(f"   Torneo ID:   {TORNEO_ID}  (state=finalized)")
         self.stdout.write(f"   Equipos:     {len(EQUIPOS)}   Partidos: {match_counter}   Criterios: {len(CRITERIOS)}")
         self.stdout.write(f"   Campeón:     {equipos[orden[0]].name} (equipo_id={orden[0]})\n")
         self.stdout.write("   Pruébalo en el frontend:")

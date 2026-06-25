@@ -1,4 +1,4 @@
-"""
+﻿"""
 Use Case: GenerarReporteIndividualUseCase — HU-AN-02
 Capa: application/
 Importa SOLO interfaces del domain/. NO importa nada de infrastructure/.
@@ -22,7 +22,7 @@ class GenerarReporteIndividualUseCase:
 
     Reglas de negocio (HU-AN-02):
         1. El torneo debe existir.
-        2. El torneo debe estar en estado 'FINISHED'.
+        2. El torneo debe estar en estado 'finalized'.
         3. El equipo debe pertenecer al torneo.
         4. El usuario solicitante debe ser representante o docente_asesor del equipo.
         5. Deben existir resultados con estado 'DEFINITIVO' para el equipo.
@@ -52,7 +52,7 @@ class GenerarReporteIndividualUseCase:
 
         Raises:
             TorneoNoEncontradoException:       Si el torneo no existe (→ 404).
-            TorneoNoFinalizadoException:       Si el torneo no está FINISHED (→ 409).
+            TorneoNoFinalizadoException:       Si el torneo no está finalized (→ 409).
             EquipoNoEncontradoException:       Si el equipo no pertenece al torneo (→ 404).
             AccesoNoAutorizadoException:       Si el usuario no tiene acceso al equipo (→ 403).
             SinResultadosDefinitivosException: Si no hay resultados DEFINITIVO (→ 422).
@@ -61,7 +61,7 @@ class GenerarReporteIndividualUseCase:
         estado = self._repo.obtener_estado_torneo(torneo_id)
         if estado is None:
             raise TorneoNoEncontradoException(torneo_id)
-        if estado != "FINISHED":
+        if estado != "finalized":
             raise TorneoNoFinalizadoException(torneo_id, estado)
 
         # 2. Verificar que el equipo pertenece al torneo

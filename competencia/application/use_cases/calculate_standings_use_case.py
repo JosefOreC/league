@@ -1,4 +1,4 @@
-from ...domain.ports.match_repository import MatchRepository
+﻿from ...domain.ports.match_repository import MatchRepository
 from ...domain.ports.standing_repository import StandingRepository
 from ...domain.entities.standing import Standing
 
@@ -9,11 +9,11 @@ class CalculateStandingsUseCase:
 
     def execute(self, tournament_id: str):
         matches = self.__match_repository.find_by_tournament(tournament_id)
-        finished_matches = [m for m in matches if m.estado == "FINISHED"]
+        finalized_matches = [m for m in matches if m.estado == "finalized"]
 
         standings = {} # team_id -> Standing object
 
-        for m in finished_matches:
+        for m in finalized_matches:
             if m.es_bye or m.es_descanso: continue
             
             # Local

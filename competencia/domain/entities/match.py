@@ -1,4 +1,4 @@
-from uuid import uuid4
+﻿from uuid import uuid4
 from datetime import datetime
 
 class Match:
@@ -84,7 +84,7 @@ class Match:
 
     def set_winner(self, winner_id: str):
         self.__ganador_id = winner_id
-        self.__estado = "FINISHED"
+        self.__estado = "finalized"
 
     def to_dict(self) -> dict:
         return {

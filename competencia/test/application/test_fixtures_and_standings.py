@@ -1,4 +1,4 @@
-import unittest
+﻿import unittest
 from unittest.mock import MagicMock
 from competencia.application.use_cases.generate_fixtures_use_case import GenerateFixturesUseCase
 from competencia.application.use_cases.calculate_standings_use_case import CalculateStandingsUseCase
@@ -39,7 +39,7 @@ class TestCompetenciaApplication(unittest.TestCase):
     def test_calculate_standings_logic(self):
         # Setup mock matches
         m1 = MagicMock(spec=Match)
-        m1.estado = "FINISHED"
+        m1.estado = "finalized"
         m1.equipo_local_id = "t1"
         m1.equipo_visitante_id = "t2"
         m1.ganador_id = "t1"

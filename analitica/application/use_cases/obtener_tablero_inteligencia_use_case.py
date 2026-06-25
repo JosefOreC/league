@@ -1,4 +1,4 @@
-"""
+﻿"""
 Use Case: ObtenerTableroInteligenciaUseCase — HU-AN-04
 Capa: application/
 Importa SOLO interfaces del domain/. NO importa nada de infrastructure/.
@@ -10,8 +10,8 @@ from ...domain.exceptions import (
     AccesoNoAutorizadoException,
 )
 
-# Estados en los que el tablero está disponible (no solo FINISHED)
-ESTADOS_TABLERO_VALIDOS = {"IN_PROGRESS", "FINISHED"}
+# Estados en los que el tablero está disponible (no solo finalized)
+ESTADOS_TABLERO_VALIDOS = {"IN_PROGRESS", "finalized"}
 
 
 class ObtenerTableroInteligenciaUseCase:
@@ -21,8 +21,8 @@ class ObtenerTableroInteligenciaUseCase:
 
     Reglas de negocio (HU-AN-04):
         1. El torneo debe existir.
-        2. El torneo debe estar en estado IN_PROGRESS o FINISHED.
-           (A diferencia de HU-AN-01, NO se restringe a solo FINISHED)
+        2. El torneo debe estar en estado IN_PROGRESS o finalized.
+           (A diferencia de HU-AN-01, NO se restringe a solo finalized)
         3. Solo ADMIN o MANAGER pueden acceder al tablero.
     """
 
@@ -52,7 +52,7 @@ class ObtenerTableroInteligenciaUseCase:
             # DRAFT: el torneo aún no ha comenzado, no hay datos de partidos
             raise AccesoNoAutorizadoException(
                 f"El tablero de inteligencia solo está disponible cuando el torneo "
-                f"está en estado IN_PROGRESS o FINISHED. Estado actual: '{estado}'."
+                f"está en estado IN_PROGRESS o finalized. Estado actual: '{estado}'."
             )
 
         tablero = self._repo.obtener_tablero(torneo_id)

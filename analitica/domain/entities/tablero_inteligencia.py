@@ -1,7 +1,7 @@
-"""
+﻿"""
 Entidad de dominio: TableroInteligencia
 Representa el tablero en tiempo real del organizador.
-Funciona en estado IN_PROGRESS Y FINISHED — no es exclusivo de torneos finalizados.
+Funciona en estado IN_PROGRESS Y finalized — no es exclusivo de torneos finalizados.
 No contiene decoradores ORM ni dependencias de infraestructura.
 """
 from dataclasses import dataclass, field
@@ -40,7 +40,7 @@ class EstadoEquipoTablero:
     puntaje_acumulado: float
     partidos_jugados: int
     victorias: int
-    medalla: Optional[str] = None           # Solo si torneo está FINISHED
+    medalla: Optional[str] = None           # Solo si torneo está finalized
 
 
 @dataclass
@@ -62,7 +62,7 @@ class TableroInteligencia:
     """
     Tablero de inteligencia del organizador.
     Calculado en tiempo de consulta — no persiste en BD.
-    Disponible en IN_PROGRESS y FINISHED.
+    Disponible en IN_PROGRESS y finalized.
     """
     torneo_id: str
     torneo_nombre: str

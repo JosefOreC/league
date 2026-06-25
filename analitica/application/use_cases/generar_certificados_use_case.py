@@ -1,4 +1,4 @@
-import hashlib
+﻿import hashlib
 import uuid
 from io import BytesIO
 from zipfile import ZipFile
@@ -37,7 +37,7 @@ class GenerarCertificadosUseCase:
             "zip_buffer": BytesIO,           ← ZIP con todos los PDFs
         }
         """
-        self._validar_torneo_finished(torneo_id)
+        self._validar_torneo_finalized(torneo_id)
 
         participantes = self._repo.obtener_participantes(torneo_id)
         generados: list[CertificadoDigital] = []
@@ -92,7 +92,7 @@ class GenerarCertificadosUseCase:
             "codigo_verificacion": str,
         }
         """
-        self._validar_torneo_finished(torneo_id)
+        self._validar_torneo_finalized(torneo_id)
 
         datos = self._repo.obtener_datos_ganador(torneo_id, equipo_id)
         if datos is None:
@@ -123,7 +123,7 @@ class GenerarCertificadosUseCase:
 
     # ── privados ─────────────────────────────────────────────────────────────
 
-    def _validar_torneo_finished(self, torneo_id: str) -> None:
+    def _validar_torneo_finalized(self, torneo_id: str) -> None:
         estado = self._repo.obtener_estado_torneo(torneo_id)
         if estado is None:
             raise TorneoNoEncontradoException(torneo_id)

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams } from "react-router";
 import { 
   Trophy, Medal, Star, AlertCircle, RefreshCw, 
@@ -183,7 +183,7 @@ export function Results() {
                 </h3>
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {matches.filter(m => m.estado === 'FINISHED').slice(0, 6).map(m => (
+                {matches.filter(m => m.estado === 'finalized').slice(0, 6).map(m => (
                    <div key={m.id} className="p-6 border-2 border-slate-50 rounded-3xl flex items-center justify-between hover:border-indigo-100 transition-all">
                       <div className="flex items-center gap-4">
                          <div className="h-12 w-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-xs">
@@ -233,7 +233,7 @@ export function Results() {
                  </div>
                  <div className="flex justify-between items-center">
                     <span className="text-sm font-bold text-slate-600">Partidos Jugados</span>
-                    <span className="font-black text-slate-900">{matches.filter(m => m.estado === 'FINISHED').length}</span>
+                    <span className="font-black text-slate-900">{matches.filter(m => m.estado === 'finalized').length}</span>
                  </div>
                  <div className="flex justify-between items-center">
                     <span className="text-sm font-bold text-slate-600">Criterios Evaluados</span>

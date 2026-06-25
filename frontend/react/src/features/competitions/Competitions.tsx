@@ -1,4 +1,4 @@
-import { 
+﻿import { 
   PlayCircle, Shuffle, Swords, Trophy, GitFork, Calendar, 
   Users, AlertCircle, Loader2, Star, CheckCircle2, 
   XCircle, ChevronRight, BarChart3, Info, Table
@@ -276,14 +276,14 @@ export function Competitions() {
                          <div 
                            key={match.id} 
                            className={`group relative bg-white border-[3px] rounded-[2rem] transition-all z-10 shadow-sm ${
-                             match.estado === "FINISHED" 
+                             match.estado === "finalized" 
                              ? 'border-slate-50 bg-slate-50/20 shadow-none grayscale-[0.5]' 
                              : 'border-slate-200 hover:border-indigo-500 hover:shadow-2xl hover:shadow-indigo-200/50 hover:-translate-y-2'
                            }`}
                          >
                            {/* Badge de Estado Pro */}
                            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                              {match.estado === "FINISHED" ? (
+                              {match.estado === "finalized" ? (
                                 <div className="flex items-center px-4 py-1.5 bg-green-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg shadow-green-200">
                                   <CheckCircle2 className="h-3 w-3 mr-2" /> FINALIZADO
                                 </div>
@@ -303,7 +303,7 @@ export function Competitions() {
                                    {getTeamName(match.equipo_local_id)}
                                  </span>
                                </div>
-                               {match.estado === "FINISHED" && (
+                               {match.estado === "finalized" && (
                                   <span className="text-[10px] font-black bg-white border border-slate-100 px-3 py-1 rounded-full shadow-sm text-slate-400">Puntaje</span>
                                )}
                              </div>
@@ -318,14 +318,14 @@ export function Competitions() {
                                    {getTeamName(match.equipo_visitante_id)}
                                  </span>
                                </div>
-                               {match.estado === "FINISHED" && (
+                               {match.estado === "finalized" && (
                                   <span className="text-[10px] font-black bg-white border border-slate-100 px-3 py-1 rounded-full shadow-sm text-slate-400">Puntaje</span>
                                )}
                              </div>
                            </div>
 
                            {/* Botón de Arbitraje Flotante */}
-                           {match.estado !== "FINISHED" && match.equipo_local_id && match.equipo_visitante_id && (
+                           {match.estado !== "finalized" && match.equipo_local_id && match.equipo_visitante_id && (
                              <button 
                                onClick={() => openQualifyModal(match)}
                                className="absolute -right-4 top-1/2 transform -translate-y-1/2 bg-slate-900 text-white p-4 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-indigo-600 hover:scale-110 active:scale-95 z-30 ring-4 ring-white"
@@ -388,7 +388,7 @@ export function Competitions() {
                                Partida #{match.posicion_en_ronda}
                              </span>
                              <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-sm ${
-                               match.estado === "FINISHED" ? "bg-green-500 text-white" : "bg-blue-600 text-white"
+                               match.estado === "finalized" ? "bg-green-500 text-white" : "bg-blue-600 text-white"
                              }`}>
                                {match.estado}
                              </span>
@@ -413,7 +413,7 @@ export function Competitions() {
                              </div>
                           </div>
                           
-                          {match.estado !== "FINISHED" && match.equipo_local_id && match.equipo_visitante_id && (
+                          {match.estado !== "finalized" && match.equipo_local_id && match.equipo_visitante_id && (
                              <button 
                                onClick={() => openQualifyModal(match)}
                                className="w-full mt-10 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl shadow-slate-100 hover:shadow-indigo-100"
@@ -444,13 +444,13 @@ export function Competitions() {
             </div>
             
             <div className="space-y-12">
-               {matches.filter(m => m.estado === "FINISHED").length === 0 ? (
+               {matches.filter(m => m.estado === "finalized").length === 0 ? (
                  <div className="text-center py-32 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
                     <Info className="h-12 w-12 text-slate-200 mx-auto mb-4" />
                     <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No hay enfrentamientos calificados para mostrar</p>
                  </div>
                ) : (
-                 matches.filter(m => m.estado === "FINISHED").map(match => (
+                 matches.filter(m => m.estado === "finalized").map(match => (
                    <div key={match.id} className="bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-100/50 overflow-hidden">
                       <div className="bg-slate-900 p-8 flex flex-col md:flex-row justify-between items-center gap-6">
                          <div className="flex items-center gap-6">

@@ -1,4 +1,4 @@
-from dataclasses import replace
+﻿from dataclasses import replace
 
 from ...domain.ports.resumen_ejecutivo_repository_port import IResumenEjecutivoRepository
 from ...domain.ports.sugerencias_repository_port import ISugerenciasRepository
@@ -20,7 +20,7 @@ class GenerarResumenEjecutivoUseCase:
 
     Reglas de negocio:
         1. El torneo debe existir.
-        2. El torneo debe estar en estado FINISHED.
+        2. El torneo debe estar en estado finalized.
         3. Deben existir resultados DEFINITIVE → si no, 422.
         4. Las recomendaciones se obtienen del análisis de sugerencias (RF3-005).
         5. Cada generación incrementa la versión; las anteriores se conservan.

@@ -1,4 +1,4 @@
-"""
+﻿"""
 Excepciones tipadas del dominio de Analítica.
 El ExceptionFilter de infraestructura mapea estas a códigos HTTP.
 No hagas try/catch en los controladores para mapear a HTTP manualmente.
@@ -13,10 +13,10 @@ Mapeo esperado:
 
 
 class TorneoNoFinalizadoException(Exception):
-    """Se lanza cuando el torneo no está en estado FINISHED y la operación lo requiere."""
+    """Se lanza cuando el torneo no está en estado finalized y la operación lo requiere."""
     def __init__(self, torneo_id: str, estado_actual: str):
         super().__init__(
-            f"El torneo '{torneo_id}' debe estar en estado FINISHED. Estado actual: '{estado_actual}'."
+            f"El torneo '{torneo_id}' debe estar en estado finalized. Estado actual: '{estado_actual}'."
         )
         self.torneo_id = torneo_id
         self.estado_actual = estado_actual

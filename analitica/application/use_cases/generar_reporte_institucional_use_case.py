@@ -1,4 +1,4 @@
-from typing import Optional, Union
+﻿from typing import Optional, Union
 from ...domain.ports.reporte_institucional_repository_port import IReporteInstitucionalRepository
 from ...domain.entities.reporte_institucional import ReporteInstitucional, ReporteInstitucionalHistorico
 from ...domain.exceptions import (
@@ -12,9 +12,9 @@ class GenerarReporteInstitucionalUseCase:
     """
     Orquesta HU-AN-03.
     Reglas de negocio:
-        1. Si se pide torneo específico: el torneo debe existir y estar en FINISHED.
+        1. Si se pide torneo específico: el torneo debe existir y estar en finalized.
         2. Si la institución no tiene equipos APROBADO en el torneo → 404.
-        3. Si historico=True: retorna todos los torneos FINISHED donde participó.
+        3. Si historico=True: retorna todos los torneos finalized donde participó.
         4. Si no hay histórico → 404 con InstitucionSinEquiposException.
     """
 

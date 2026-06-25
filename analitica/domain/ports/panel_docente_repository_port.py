@@ -1,4 +1,4 @@
-"""
+﻿"""
 Puerto (interfaz) del repositorio de Panel Docente.
 El domain define el contrato; la infraestructura lo implementa.
 No importa nada de application/ ni infrastructure/.
@@ -35,7 +35,7 @@ class IPanelDocenteRepository(ABC):
     @abstractmethod
     def contar_partidos_finalizados(self, torneo_id: str) -> int:
         """
-        Cuenta partidos FINISHED en el torneo (para validar PRELIMINAR).
+        Cuenta partidos finalized en el torneo (para validar PRELIMINAR).
         Se necesitan al menos 2 para emitir un panel PRELIMINAR.
         """
         ...

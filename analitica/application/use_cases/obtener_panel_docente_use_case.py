@@ -1,4 +1,4 @@
-"""
+﻿"""
 Use Case: ObtenerPanelDocenteUseCase — HU-AN-08
 Capa: application/
 Importa SOLO interfaces del domain/. NO importa nada de infrastructure/.
@@ -19,7 +19,7 @@ from ...domain.exceptions import (
     AccesoNoAutorizadoException,
 )
 
-# Mínimo de partidos FINISHED para emitir un panel PRELIMINAR
+# Mínimo de partidos finalized para emitir un panel PRELIMINAR
 MIN_PARTIDOS_PANEL_PRELIMINAR = 2
 
 ADVERTENCIA_PRELIMINAR = (
@@ -37,11 +37,11 @@ class ObtenerPanelDocenteUseCase:
         2. El equipo debe pertenecer al torneo.
         3. El usuario solicitante debe ser el docente_asesor vinculado al equipo
            (o ADMIN/MANAGER para supervisión).
-        4. Si el torneo está IN_PROGRESS con ≥ 2 partidos FINISHED:
+        4. Si el torneo está IN_PROGRESS con ≥ 2 partidos finalized:
            → Retorna panel con estado_panel = PRELIMINAR y advertencia.
-        5. Si el torneo está FINISHED:
+        5. Si el torneo está finalized:
            → Retorna panel con estado_panel = DEFINITIVO.
-        6. Si el torneo está DRAFT o IN_PROGRESS con < 2 partidos FINISHED:
+        6. Si el torneo está DRAFT o IN_PROGRESS con < 2 partidos finalized:
            → Error 403 (datos insuficientes).
         7. El domain service de recomendaciones es invocado desde aquí (no desde infra).
     """
@@ -153,7 +153,7 @@ class ObtenerPanelDocenteUseCase:
             AccesoNoAutorizadoException si el torneo está en DRAFT o
             IN_PROGRESS con menos de 2 partidos finalizados.
         """
-        if estado_torneo == "FINISHED":
+        if estado_torneo == "finalized":
             return EstadoPanel.DEFINITIVO, None
 
         if estado_torneo == "IN_PROGRESS":

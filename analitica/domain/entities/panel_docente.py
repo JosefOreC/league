@@ -1,10 +1,10 @@
-"""
+﻿"""
 Entidad de dominio: PanelDocente
 Representa el panel de retroalimentación pedagógica para el docente asesor de un equipo.
 No contiene decoradores ORM ni dependencias de infraestructura.
 
-Estado PRELIMINAR: torneo IN_PROGRESS con al menos 2 partidos FINISHED.
-Estado DEFINITIVO:  torneo FINISHED con resultados DEFINITIVO.
+Estado PRELIMINAR: torneo IN_PROGRESS con al menos 2 partidos finalized.
+Estado DEFINITIVO:  torneo finalized con resultados DEFINITIVO.
 """
 from dataclasses import dataclass, field
 from typing import Optional

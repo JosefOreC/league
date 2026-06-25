@@ -1,4 +1,4 @@
-from ...domain.ports.sugerencias_repository_port import ISugerenciasRepository
+﻿from ...domain.ports.sugerencias_repository_port import ISugerenciasRepository
 from ...domain.entities.sugerencia_decision import SugerenciaDecision
 from ...domain.exceptions import TorneoNoEncontradoException
 
@@ -16,8 +16,8 @@ class GenerarSugerenciasUseCase:
 
     Reglas:
         REPROGRAMACION  → torneo en cualquier estado, >= 3 partidos retrasados > 20 min.
-        AJUSTE_CRITERIO → solo si FINISHED, criterio con stddev > 40 o < 2.
-        APOYO_EQUIPO    → solo si FINISHED, equipo en percentil <= 10.
+        AJUSTE_CRITERIO → solo si finalized, criterio con stddev > 40 o < 2.
+        APOYO_EQUIPO    → solo si finalized, equipo en percentil <= 10.
     """
 
     def __init__(self, repository: ISugerenciasRepository) -> None:

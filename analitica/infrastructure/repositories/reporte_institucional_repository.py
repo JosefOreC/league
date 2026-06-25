@@ -1,4 +1,4 @@
-from typing import Optional
+﻿from typing import Optional
 from django.db import connection
 
 from ...domain.ports.reporte_institucional_repository_port import IReporteInstitucionalRepository
@@ -117,7 +117,7 @@ class ReporteInstitucionalRepositoryImpl(IReporteInstitucionalRepository):
         self, inst_id: str
     ) -> Optional[ReporteInstitucionalHistorico]:
         """
-        Una sola query: todos los torneos FINISHED donde la institución participó,
+        Una sola query: todos los torneos finalized donde la institución participó,
         con promedio de puntaje y mejor posición por torneo, ordenado por fecha DESC.
         """
         with connection.cursor() as cursor:

@@ -1,4 +1,4 @@
-"""
+﻿"""
 Implementación concreta del repositorio de Tablero de Inteligencia.
 Capa: infrastructure/repositories/
 Implementa ITableroInteligenciaRepository usando SQL raw con máximo 2 queries.
@@ -12,7 +12,7 @@ Tablas utilizadas (sin crear nuevas):
     competencia_match           — estado de partidos, fecha_programada
     competencia_team            — nombre de equipos
     competencia_match_result    — puntajes acumulados
-    competencia_final_ranking   — posición y medalla (si FINISHED)
+    competencia_final_ranking   — posición y medalla (si finalized)
     competencia_standing        — posición actual durante IN_PROGRESS
 
 Índices críticos para rendimiento < 1s:
@@ -97,7 +97,7 @@ class TableroInteligenciaRepositoryImpl(ITableroInteligenciaRepository):
             t.state                                             AS estado_torneo,
             COUNT(DISTINCT e.id)                                AS total_equipos,
             COUNT(DISTINCT p.id)                                AS total_partidos,
-            COUNT(DISTINCT p.id) FILTER (WHERE p.estado = 'FINISHED')   AS partidos_finalizados,
+            COUNT(DISTINCT p.id) FILTER (WHERE p.estado = 'finalized')   AS partidos_finalizados,
             COUNT(DISTINCT p.id) FILTER (WHERE p.estado = 'PENDING')    AS partidos_pendientes,
             COUNT(DISTINCT p.id) FILTER (WHERE p.estado = 'IN_PROGRESS') AS partidos_en_progreso
         FROM competencia_tournament t
@@ -123,7 +123,7 @@ class TableroInteligenciaRepositoryImpl(ITableroInteligenciaRepository):
             if total_partidos > 0 else 0.0
         )
 
-        # ── 1b. Top 3: desde ranking_final (FINISHED) o standings (IN_PROGRESS) ──
+        # ── 1b. Top 3: desde ranking_final (finalized) o standings (IN_PROGRESS) ──
         top_3 = self._obtener_top3(torneo_id, estado_torneo)
 
         # ── 1c. Partidos próximos (PENDING + IN_PROGRESS, límite 10) ─────────
@@ -146,18 +146,18 @@ class TableroInteligenciaRepositoryImpl(ITableroInteligenciaRepository):
         self, torneo_id: str, estado_torneo: str
     ) -> list[EstadoEquipoTablero]:
         """
-        Top 3 desde ranking_final si FINISHED, desde standings si IN_PROGRESS.
+        Top 3 desde ranking_final si finalized, desde standings si IN_PROGRESS.
         Partidos jugados y victorias se calculan desde competencia_match.
         """
-        if estado_torneo == "FINISHED":
+        if estado_torneo == "finalized":
             sql = """
             SELECT
                 e.id, e.name,
                 fr.posicion_final,
                 fr.puntaje_total_acumulado,
                 fr.medalla,
-                COUNT(DISTINCT p.id) FILTER (WHERE p.estado = 'FINISHED')  AS partidos_jugados,
-                COUNT(DISTINCT p.id) FILTER (WHERE p.estado = 'FINISHED'
+                COUNT(DISTINCT p.id) FILTER (WHERE p.estado = 'finalized')  AS partidos_jugados,
+                COUNT(DISTINCT p.id) FILTER (WHERE p.estado = 'finalized'
                     AND p.ganador_id = e.id)                                AS victorias
             FROM competencia_final_ranking fr
             INNER JOIN competencia_team e ON e.id = fr.team_id
@@ -270,7 +270,7 @@ class TableroInteligenciaRepositoryImpl(ITableroInteligenciaRepository):
           - PARTIDO_RETRASADO: partido PENDING con fecha_programada vencida > 30 min
           - CAMBIO_TOP3: equipos que tienen puntaje para entrar al top 3 pero
                          no están en el ranking actual (aproximación práctica)
-          - SIN_RESULTADOS: equipos con partidos FINISHED sin ningún resultado registrado
+          - SIN_RESULTADOS: equipos con partidos finalized sin ningún resultado registrado
 
         -- INDEX HINT: competencia_match(fecha_programada, estado) WHERE estado='PENDING'
         -- INDEX HINT: competencia_match_result(match_id)
@@ -327,7 +327,7 @@ class TableroInteligenciaRepositoryImpl(ITableroInteligenciaRepository):
         LEFT JOIN competencia_team el ON el.id = p.equipo_local_id
         LEFT JOIN competencia_team ev ON ev.id = p.equipo_visitante_id
         WHERE p.tournament_id = %s
-          AND p.estado = 'FINISHED'
+          AND p.estado = 'finalized'
           AND p.es_bye = FALSE
           AND NOT EXISTS (
               SELECT 1 FROM competencia_match_result mr
@@ -346,7 +346,7 @@ class TableroInteligenciaRepositoryImpl(ITableroInteligenciaRepository):
                 severidad=SeveridadAlerta.ADVERTENCIA,
                 mensaje=(
                     f"Partido (ronda {r[3]}) entre '{r[1]}' y '{r[2]}' "
-                    f"está FINISHED pero no tiene resultados registrados."
+                    f"está finalized pero no tiene resultados registrados."
                 ),
                 entidad_ref_id=r[0],
             ))

@@ -1,4 +1,4 @@
-// ─── Enums ────────────────────────────────────────────────────────────────────
+﻿// ─── Enums ────────────────────────────────────────────────────────────────────
 
 export enum TipoTorneo {
   KNOCKOUT = "KNOCKOUT",
@@ -139,7 +139,7 @@ export interface UpdateConfigRequest {
 export enum EstadoPartido {
   PENDING = "PENDING",
   IN_PROGRESS = "IN_PROGRESS",
-  FINISHED = "FINISHED",
+  FINISHED = "finalized",
   BYE = "BYE",
 }
 

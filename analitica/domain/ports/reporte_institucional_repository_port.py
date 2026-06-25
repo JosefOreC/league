@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+﻿from abc import ABC, abstractmethod
 from typing import Optional
 from ..entities.reporte_institucional import ReporteInstitucional, ReporteInstitucionalHistorico
 
@@ -30,7 +30,7 @@ class IReporteInstitucionalRepository(ABC):
         self, inst_id: str
     ) -> Optional[ReporteInstitucionalHistorico]:
         """
-        Query con JOIN sobre todos los torneos FINISHED donde participó la institución.
+        Query con JOIN sobre todos los torneos finalized donde participó la institución.
         Retorna None si no hay torneos finalizados con participación.
         """
         ...
