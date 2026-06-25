@@ -14,6 +14,11 @@ import {
   Bot,
   Medal,
   Sparkles,
+  PieChart,
+  Activity,
+  Lightbulb,
+  Award,
+  FileSignature,
 } from "lucide-react";
 import { SystemRol } from "../../types/auth";
 
@@ -65,6 +70,37 @@ const navItems = [
     href: "/dashboard/instituciones",
     icon: Building2,
     roles: [SystemRol.ADMIN],
+  },
+  // ── MVP3 · Analítica, Reportes e Inteligencia (demo torneo :id = 1) ──────
+  {
+    name: "Análisis Integral",
+    href: "/dashboard/torneos/1/analisis-integral",
+    icon: PieChart,
+    roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR],
+  },
+  {
+    name: "Tablero Inteligencia",
+    href: "/dashboard/torneos/1/tablero-inteligencia",
+    icon: Activity,
+    roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR],
+  },
+  {
+    name: "Apoyo a Decisiones",
+    href: "/dashboard/torneos/1/apoyo-decisiones",
+    icon: Lightbulb,
+    roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR],
+  },
+  {
+    name: "Certificados",
+    href: "/dashboard/torneos/1/certificados",
+    icon: Award,
+    roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR],
+  },
+  {
+    name: "Resumen Ejecutivo",
+    href: "/dashboard/torneos/1/resumen-ejecutivo",
+    icon: FileSignature,
+    roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR],
   },
   {
     name: "Calendario",

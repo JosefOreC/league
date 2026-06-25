@@ -22,6 +22,15 @@ import { PublicTournament } from "../features/tournaments/PublicTournament";
 import { MySimulations } from "../features/simulation/MySimulations";
 import { SimulationEditor } from "../features/simulation/SimulationEditor";
 import { RetoAnalyzer } from "../features/simulation/RetoAnalyzer";
+// ── MVP3 — Analítica, Reportes e Inteligencia de Torneo ───────────────────
+import { AnalisisIntegral } from "../features/analytics/AnalisisIntegral";
+import { ReporteIndividual } from "../features/analytics/ReporteIndividual";
+import { ReporteInstitucional } from "../features/analytics/ReporteInstitucional";
+import { TableroInteligencia } from "../features/analytics/TableroInteligencia";
+import { ApoyoDecisiones } from "../features/analytics/ApoyoDecisiones";
+import { Certificados } from "../features/analytics/Certificados";
+import { ResumenEjecutivo } from "../features/analytics/ResumenEjecutivo";
+import { PanelDocente } from "../features/analytics/PanelDocente";
 import { RoleGuard } from "../components/auth/RoleGuard";
 import { SystemRol } from "../types/auth";
 
@@ -110,6 +119,40 @@ export const router = createBrowserRouter([
         Component: () => (
           <RoleGuard allowedRoles={[SystemRol.ADMIN]}><Institutions /></RoleGuard>
         ),
+      },
+
+      // ── MVP3 · Analítica, Reportes e Inteligencia (Manager / Admin) ─────
+      {
+        path: "torneos/:id/analisis-integral",
+        Component: () => <ManagerOrAdmin><AnalisisIntegral /></ManagerOrAdmin>,
+      },
+      {
+        path: "torneos/:id/equipos/:eid/reporte-individual",
+        Component: () => <ManagerOrAdmin><ReporteIndividual /></ManagerOrAdmin>,
+      },
+      {
+        path: "instituciones/:id/reporte",
+        Component: () => <RoleGuard allowedRoles={[SystemRol.ADMIN]}><ReporteInstitucional /></RoleGuard>,
+      },
+      {
+        path: "torneos/:id/tablero-inteligencia",
+        Component: () => <ManagerOrAdmin><TableroInteligencia /></ManagerOrAdmin>,
+      },
+      {
+        path: "torneos/:id/apoyo-decisiones",
+        Component: () => <ManagerOrAdmin><ApoyoDecisiones /></ManagerOrAdmin>,
+      },
+      {
+        path: "torneos/:id/certificados",
+        Component: () => <ManagerOrAdmin><Certificados /></ManagerOrAdmin>,
+      },
+      {
+        path: "torneos/:id/resumen-ejecutivo",
+        Component: () => <ManagerOrAdmin><ResumenEjecutivo /></ManagerOrAdmin>,
+      },
+      {
+        path: "torneos/:id/equipos/:eid/panel-docente",
+        Component: () => <NotParticipant><PanelDocente /></NotParticipant>,
       },
 
       // ── Participant only ────────────────────────────────────────────────
