@@ -1,0 +1,31 @@
+# Dependencias (se reinstalan dentro de la imagen)
+node_modules/
+
+# Builds de salida
+dist/
+build/
+.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Git
+.git/
+.gitignore
+
+# Entorno y secretos
+.env
+.env.*
+!.env.template
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+.dockerignore

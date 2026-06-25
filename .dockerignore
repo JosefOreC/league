@@ -1,0 +1,40 @@
+# Entornos virtuales Python (se reinstalan dentro de la imagen)
+.venv/
+venv/
+env/
+
+# Caches de Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Frontend (tiene su propio build / no va en la imagen del backend)
+frontend/
+
+# Git y control de versiones
+.git/
+.gitignore
+
+# Datos de la base / volúmenes locales
+postgres_data/
+*.sqlite3
+
+# Entorno y secretos
+.env
+.env.*
+
+# Editores / SO
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
