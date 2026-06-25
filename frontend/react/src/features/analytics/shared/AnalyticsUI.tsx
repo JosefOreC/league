@@ -51,17 +51,44 @@ export function PageHeader({ title, subtitle, meta, statusBadge, accent = viewCo
     getTournaments()
       .then((all) => {
         if (!active) return;
-        let filtered: any[];
+        
+        // 1. Filtrar por rol (el participante no ve borradores ni revisiones)
+        let roleFiltered: any[];
         if (isParticipant) {
-          filtered = all.filter(t => t.state !== "draft" && t.state !== "in_review");
+          roleFiltered = all.filter(t => t.state !== "draft" && t.state !== "in_review");
         } else {
-          filtered = all.filter(t => {
+          roleFiltered = all.filter(t => {
             if (isAdmin) return true;
             if (isManager) return t.creator_user_id === userId;
             return false;
           });
         }
+        
+        // 2. Filtrar por requerimientos del tipo de página (finalizados vs activos)
+        const path = location.pathname;
+        const needsFinalized = path.includes("analisis-integral") || 
+                              path.includes("resumen-ejecutivo") || 
+                              path.includes("certificados");
+        
+        let filtered: any[];
+        if (needsFinalized) {
+          filtered = roleFiltered.filter(t => t.state === "finalized");
+        } else {
+          // Tablero y apoyo pueden ver torneos en progreso y finalizados
+          filtered = roleFiltered.filter(t => t.state === "in_progress" || t.state === "finalized");
+        }
+        
         setTournaments(filtered);
+
+        // 3. Redirección automática si el torneo actual no es válido o no está en el estado adecuado para esta página
+        const currentIsValid = filtered.some(t => String(t.id) === String(urlTorneoId));
+        if (!currentIsValid && filtered.length > 0) {
+          const newPath = path.replace(
+            /\/dashboard\/torneos\/[^/]+/,
+            `/dashboard/torneos/${filtered[0].id}`
+          );
+          navigate(newPath, { replace: true });
+        }
       })
       .catch((err) => console.error("Error loading tournament list in PageHeader:", err))
       .finally(() => {
@@ -71,7 +98,7 @@ export function PageHeader({ title, subtitle, meta, statusBadge, accent = viewCo
     return () => {
       active = false;
     };
-  }, [urlTorneoId, isParticipant, isAdmin, isManager, userId]);
+  }, [urlTorneoId, isParticipant, isAdmin, isManager, userId, location.pathname, navigate]);
 
   const handleTournamentSelect = (newId: string) => {
     if (!newId || newId === urlTorneoId) return;
