@@ -1,0 +1,87 @@
+# Production stack for Zoids League.
+# Usage:
+#   1. Copy .env.example to .env and fill in real values.
+#   2. Run ./init-letsencrypt.sh once to obtain the TLS certificate.
+#   3. docker compose -f docker-compose.prod.yml up -d --build
+#
+# The local docker-compose.yml (development) is left untouched.
+
+services:
+
+  db:
+    image: postgres:17
+    container_name: league_db_prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # No host port published: the database is reachable only on the internal
+    # Docker network, never from the public internet.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./
+      dockerfile: Dockerfile.prod
+    container_name: league_backend_prod
+    restart: always
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+    volumes:
+      - static_data:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+    # No host port published: only Nginx talks to the backend.
+
+  nginx:
+    build:
+      context: ./
+      dockerfile: nginx/Dockerfile
+    container_name: league_nginx_prod
+    restart: always
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - static_data:/app/staticfiles:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_conf:/etc/letsencrypt:ro
+    # Reload every 6h so renewed certificates are picked up. The official
+    # entrypoint still runs first and fills in ${DOMAIN} in the config.
+    command: /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+    depends_on:
+      - backend
+
+  certbot:
+    image: certbot/certbot
+    container_name: league_certbot_prod
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+    # Auto-renew: check twice a day; certbot only renews when near expiry.
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done'"
+
+volumes:
+  postgres_data:
+  static_data:
+  certbot_www:
+  certbot_conf:

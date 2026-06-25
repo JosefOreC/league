@@ -1,0 +1,29 @@
+# Ignore file specific to the Nginx image build (BuildKit uses
+# <dockerfile>.dockerignore when present, instead of the root .dockerignore).
+# Unlike the backend build, this one MUST keep frontend/react so the React app
+# can be compiled. Patterns are relative to the build context (repo root).
+
+.git
+**/__pycache__
+**/*.py[cod]
+.venv
+venv
+env
+.env
+.env.*
+!.env.example
+*.sqlite3
+postgres_data
+
+# Frontend build artefacts / deps (reinstalled inside the image).
+frontend/react/node_modules
+frontend/react/dist
+
+# Backend code is not needed in the Nginx image.
+analitica
+authentication
+competencia
+simulacion
+config
+manage.py
+requirements.txt

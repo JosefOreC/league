@@ -1,0 +1,8 @@
+# Force LF line endings for files that run inside Linux containers.
+# Without this, Windows checkouts can produce CRLF and break shell scripts
+# with "/bin/sh^M: bad interpreter".
+*.sh            text eol=lf
+entrypoint.prod.sh text eol=lf
+init-letsencrypt.sh text eol=lf
+Dockerfile*     text eol=lf
+*.template      text eol=lf
