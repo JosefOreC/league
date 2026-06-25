@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import type { ReactNode, CSSProperties } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams, useLocation } from "react-router";
 import { ArrowLeft, Download, FileText, Loader2, Check, AlertTriangle, Inbox, Lock, RefreshCw } from "lucide-react";
+import { getTournaments } from "../../../services/tournamentService";
+import { useRoleGuard } from "../../../hooks/useRoleGuard";
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Tokens de diseño compartidos — MVP3 Analítica (solo presentación)
@@ -34,17 +36,63 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, meta, statusBadge, accent = viewColor.indigo, right }: PageHeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { id: urlTorneoId } = useParams<{ id: string }>();
+  const { isParticipant, isAdmin, isManager, userId } = useRoleGuard();
+
+  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
+
+  useEffect(() => {
+    if (!urlTorneoId) return;
+
+    let active = true;
+    setLoadingList(true);
+    getTournaments()
+      .then((all) => {
+        if (!active) return;
+        let filtered: any[];
+        if (isParticipant) {
+          filtered = all.filter(t => t.state !== "draft" && t.state !== "in_review");
+        } else {
+          filtered = all.filter(t => {
+            if (isAdmin) return true;
+            if (isManager) return t.creator_user_id === userId;
+            return false;
+          });
+        }
+        setTournaments(filtered);
+      })
+      .catch((err) => console.error("Error loading tournament list in PageHeader:", err))
+      .finally(() => {
+        if (active) setLoadingList(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [urlTorneoId, isParticipant, isAdmin, isManager, userId]);
+
+  const handleTournamentSelect = (newId: string) => {
+    if (!newId || newId === urlTorneoId) return;
+    const newPath = location.pathname.replace(
+      /\/dashboard\/torneos\/[^/]+/,
+      `/dashboard/torneos/${newId}`
+    );
+    navigate(newPath);
+  };
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 flex-1">
         <button
           onClick={() => navigate(-1)}
-          className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+          className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors print:hidden"
           aria-label="Volver"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold tracking-tight" style={{ color: accent }}>
               {title}
@@ -53,6 +101,30 @@ export function PageHeader({ title, subtitle, meta, statusBadge, accent = viewCo
           </div>
           {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
           {meta && <p className="text-xs text-slate-400 mt-0.5">{meta}</p>}
+
+          {/* Selector de torneos dinámico */}
+          {urlTorneoId && (
+            <div className="mt-2.5 flex items-center gap-2 print:hidden">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Torneo activo:</span>
+              {loadingList ? (
+                <span className="text-[10px] font-semibold text-slate-400 animate-pulse">Cargando...</span>
+              ) : tournaments.length === 0 ? (
+                <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">Sin torneos</span>
+              ) : (
+                <select
+                  value={urlTorneoId}
+                  onChange={(e) => handleTournamentSelect(e.target.value)}
+                  className="bg-slate-100 border border-slate-200 text-slate-700 font-bold text-[10px] uppercase tracking-wider rounded-lg px-2 py-1 outline-none transition-all cursor-pointer focus:border-indigo-500"
+                >
+                  {tournaments.map((t) => (
+                    <option key={t.id} value={t.id} className="font-bold text-slate-800 bg-white">
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {right && <div className="flex items-center gap-3 flex-wrap">{right}</div>}
@@ -95,11 +167,13 @@ export function ExportPdfButton({
 
   const run = () => {
     setState("loading");
-    // Solo presentación: simula el ciclo de exportación
+    // Exportación real: abre el diálogo de impresión del navegador → "Guardar como PDF".
+    // El CSS print: oculta el menú/header para una salida limpia.
     setTimeout(() => {
+      window.print();
       setState("done");
       setTimeout(() => setState("idle"), 3000);
-    }, 1400);
+    }, 200);
   };
 
   const base =
@@ -147,7 +221,8 @@ export function ExportPdfButton({
 export function ExportPdfOutline({ accent = viewColor.indigo }: { accent?: string }) {
   return (
     <button
-      className="inline-flex items-center gap-2 rounded-md border bg-white px-4 h-10 text-sm font-medium hover:bg-slate-50 transition-colors"
+      onClick={() => window.print()}
+      className="inline-flex items-center gap-2 rounded-md border bg-white px-4 h-10 text-sm font-medium hover:bg-slate-50 transition-colors print:hidden"
       style={{ color: accent, borderColor: accent }}
     >
       <FileText className="h-4 w-4" /> Exportar PDF

@@ -1,16 +1,22 @@
-﻿import { useState, useEffect } from "react";
-import { useParams } from "react-router";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router";
 import { 
-  Trophy, Medal, Star, AlertCircle, RefreshCw, 
-  ChevronRight, Info, BarChart3, Table, Users
+  Trophy, Medal, AlertCircle, RefreshCw, 
+  ChevronRight, Info, BarChart3, Table
 } from "lucide-react";
-import { getPublicTournamentData } from "../../services/tournamentService";
+import { getPublicTournamentData, getTournaments } from "../../services/tournamentService";
+import { useRoleGuard } from "../../hooks/useRoleGuard";
 
 export function Results() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const { id: torneoId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isParticipant, isAdmin, isManager, userId } = useRoleGuard();
+
+  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [isListLoading, setIsListLoading] = useState(true);
   
   const [matches, setMatches] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
@@ -33,6 +39,43 @@ export function Results() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchTournamentsList = async () => {
+      try {
+        setIsListLoading(true);
+        const all = await getTournaments();
+        
+        // Filter based on role
+        let filtered: any[];
+        if (isParticipant) {
+          filtered = all.filter(t => t.state !== "draft" && t.state !== "in_review");
+        } else {
+          filtered = all.filter(t => {
+            if (isAdmin) return true;
+            if (isManager) return t.creator_user_id === userId;
+            return false;
+          });
+        }
+        
+        setTournaments(filtered);
+        
+        if (!torneoId && filtered.length > 0) {
+          navigate(`/dashboard/torneos/${filtered[0].id}/resultados`, { replace: true });
+        } else if (filtered.length === 0) {
+          setIsLoading(false); // Stop loader if there are no tournaments
+        }
+      } catch (err) {
+        console.error("Error al cargar torneos:", err);
+        setError("Error al cargar la lista de torneos.");
+        setIsLoading(false);
+      } finally {
+        setIsListLoading(false);
+      }
+    };
+    
+    fetchTournamentsList();
+  }, [torneoId, isParticipant, isAdmin, isManager, userId, navigate]);
 
   useEffect(() => {
     fetchData();
@@ -82,7 +125,7 @@ export function Results() {
       {/* Header Premium */}
       <div className="bg-white rounded-3xl p-10 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 bg-indigo-50 rounded-full blur-[100px] opacity-40"></div>
-        <div className="relative z-10">
+        <div className="relative z-10 flex-1 w-full">
           <div className="inline-flex items-center px-4 py-1.5 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4">
              <Trophy className="h-3 w-3 mr-2 text-yellow-400" /> Resultados y Posiciones
           </div>
@@ -90,10 +133,37 @@ export function Results() {
             Desempeño del Torneo
           </h1>
           <p className="text-slate-500 font-medium">Resumen estadístico acumulado por criterios y rondas.</p>
+          
+          {/* Dropdown de Selección de Torneo */}
+          <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Seleccionar Torneo:</span>
+            {isListLoading ? (
+              <span className="text-xs font-semibold text-slate-400 animate-pulse flex items-center gap-2">
+                <RefreshCw className="h-3 w-3 animate-spin text-indigo-500" /> Cargando lista...
+              </span>
+            ) : tournaments.length === 0 ? (
+              <span className="text-xs font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">
+                No hay torneos disponibles
+              </span>
+            ) : (
+              <select
+                value={torneoId || ""}
+                onChange={(e) => navigate(`/dashboard/torneos/${e.target.value}/resultados`)}
+                className="bg-slate-50 border-2 border-slate-100 hover:border-indigo-200 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-xl p-2.5 outline-none transition-all cursor-pointer min-w-[240px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              >
+                {tournaments.map((t) => (
+                  <option key={t.id} value={t.id} className="font-bold text-slate-800 bg-white">
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
         <button 
           onClick={fetchData}
-          className="h-14 px-8 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 flex items-center gap-3 active:scale-95"
+          disabled={!torneoId}
+          className="h-14 px-8 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 flex items-center gap-3 active:scale-95 disabled:opacity-50 disabled:pointer-events-none self-end md:self-center"
         >
           <RefreshCw className="h-4 w-4" /> Actualizar Datos
         </button>

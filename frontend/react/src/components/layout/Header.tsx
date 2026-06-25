@@ -5,7 +5,7 @@ export function Header() {
   const { user } = useAuth();
 
   return (
-    <header className="flex-shrink-0 border-b border-slate-200 bg-white">
+    <header className="flex-shrink-0 border-b border-slate-200 bg-white print:hidden">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex flex-1">
           <div className="flex w-full md:ml-0">

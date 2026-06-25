@@ -1,10 +1,9 @@
+import { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import {
   LayoutDashboard,
   Trophy,
-  Users,
-  Swords,
   ListOrdered,
   BrainCircuit,
   FileBarChart,
@@ -127,6 +126,29 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
+  // Extract tournament ID if present in current URL path, e.g. /dashboard/torneos/:id/...
+  const match = location.pathname.match(/\/dashboard\/torneos\/([^/]+)/);
+  const currentTournamentId = match ? match[1] : null;
+
+  // Track the last active tournament ID to persist user context
+  useEffect(() => {
+    if (currentTournamentId && currentTournamentId !== "nuevo") {
+      localStorage.setItem("lastTournamentId", currentTournamentId);
+    }
+  }, [currentTournamentId]);
+
+  const activeTournamentId = currentTournamentId || localStorage.getItem("lastTournamentId") || "1";
+
+  const getHref = (item: typeof navItems[number]) => {
+    if (item.href.includes("/dashboard/torneos/1/")) {
+      return item.href.replace("/dashboard/torneos/1/", `/dashboard/torneos/${activeTournamentId}/`);
+    }
+    if (item.href.includes("?torneo=1")) {
+      return item.href.replace("?torneo=1", `?torneo=${activeTournamentId}`);
+    }
+    return item.href;
+  };
+
   const filteredNavItems = navItems.filter(
     (item) => user && item.roles.includes(user.rol)
   );
@@ -146,7 +168,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="flex flex-col w-64 bg-slate-900 border-r border-slate-800 h-full">
+    <div className="flex flex-col w-64 bg-slate-900 border-r border-slate-800 h-full print:hidden">
       {/* Logo */}
       <div className="flex items-center justify-center h-16 bg-slate-900 border-b border-slate-800">
         <Link to="/dashboard" className="flex items-center space-x-2 text-white font-bold text-xl">
@@ -159,14 +181,15 @@ export function Sidebar() {
       <div className="flex-1 overflow-y-auto py-4">
         <nav className="space-y-0.5 px-2">
           {filteredNavItems.map((item) => {
+            const itemHref = getHref(item);
             const isActive =
               item.href === "/dashboard"
                 ? location.pathname === "/dashboard"
-                : location.pathname.startsWith(item.href);
+                : location.pathname.startsWith(itemHref);
             return (
               <Link
                 key={item.name}
-                to={item.href}
+                to={itemHref}
                 className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
                   isActive
                     ? "bg-slate-800 text-white"
