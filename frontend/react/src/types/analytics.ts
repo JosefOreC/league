@@ -195,3 +195,76 @@ export interface PanelDocenteDTO {
   criterios: CriterioPanelDTO[];
   recomendaciones: RecomendacionDTO[];
 }
+
+/* ── HU-AN-03 · Reporte Institucional ─────────────────────────────────────── */
+export interface PosicionInstDTO {
+  equipo_id: string;
+  nombre_equipo: string;
+  posicion_final: number;
+  puntaje_acumulado: number;
+}
+
+export interface ReporteInstitucionalDTO {
+  institucion_id: string;
+  nombre_institucion: string;
+  tipo: string;
+  torneo_id: string;
+  total_equipos_participantes: number;
+  posiciones_obtenidas: PosicionInstDTO[];
+  puntaje_promedio_institucional: number;
+  mejor_posicion_lograda: number;
+  criterio_mas_destacado: string;
+}
+
+export interface EvolucionHistDTO {
+  torneo_id: string;
+  nombre_torneo: string;
+  fecha: string;
+  equipos: number;
+  puntaje_promedio: number;
+  mejor_posicion: number;
+}
+
+export interface ReporteInstitucionalHistDTO {
+  institucion_id: string;
+  nombre_institucion: string;
+  tipo: string;
+  evolucion_historica: EvolucionHistDTO[];
+}
+
+/* ── HU-AN-05 · Sugerencias ───────────────────────────────────────────────── */
+export interface SugerenciaDTO {
+  id: string;
+  tipo: string;
+  descripcion: string;
+  accion_sugerida: string;
+  entidad_ref_id: string | null;
+  severidad: string; // ERROR | WARNING | INFO
+  estado: string; // PENDIENTE | ATENDIDA | DESCARTADA
+  generado_en: string;
+}
+
+export interface SugerenciasResponse {
+  torneo_id: string;
+  sugerencias: SugerenciaDTO[];
+  mensaje?: string;
+}
+
+/* ── HU-AN-07 · Resumen Ejecutivo ─────────────────────────────────────────── */
+export interface ResumenEjecutivoDTO {
+  id: string;
+  torneo_id: string;
+  resumen_texto: string;
+  tono: string;
+  version: number;
+  metricas_usadas: {
+    total_equipos?: number;
+    total_instituciones?: number;
+    total_participantes?: number;
+    campeon_nombre?: string;
+    puntaje_campeon?: number;
+    [k: string]: unknown;
+  };
+  num_palabras: number;
+  generado_en: string;
+}

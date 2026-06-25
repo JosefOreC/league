@@ -103,6 +103,12 @@ const navItems = [
     roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR],
   },
   {
+    name: "Reporte Institucional",
+    href: "/dashboard/instituciones/ie-1/reporte?torneo=1",
+    icon: Building2,
+    roles: [SystemRol.ADMIN, SystemRol.ORGANIZADOR],
+  },
+  {
     name: "Calendario",
     href: "/dashboard/calendario",
     icon: CalendarDays,

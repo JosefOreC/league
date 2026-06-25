@@ -1,124 +1,160 @@
-import { PageHeader, ExportPdfButton, KpiCardRow, Panel, medalEmoji, viewColor, sev } from "./shared/AnalyticsUI";
+import { useParams, useSearchParams } from "react-router";
+import {
+  PageHeader,
+  ExportPdfButton,
+  KpiCardRow,
+  Panel,
+  AsyncBoundary,
+  useAsyncData,
+  medalEmoji,
+  viewColor,
+  sev,
+} from "./shared/AnalyticsUI";
+import { analyticsService } from "../../services/analyticsService";
+import type { ReporteInstitucionalDTO, ReporteInstitucionalHistDTO } from "../../types/analytics";
 
-/* HU-AN-03 — Reporte Institucional · /instituciones/:id/reporte */
-
-const KPIS = [
-  { label: "Equipos totales", value: 3, accentColor: viewColor.indigo },
-  { label: "Mejor posición", value: "1°", accentColor: sev.gold },
-  { label: "Prom. institucional", value: "82.6 pts", accentColor: sev.info },
-  { label: "Criterio destacado", value: "Precisión nav.", accentColor: sev.success },
-  { label: "Medallas", value: "🥇🥈", accentColor: sev.gold },
-  { label: "Participantes", value: "12 est.", accentColor: "#f43f5e" },
-];
-
-const EQUIPOS = [
-  { equipo: "RoboChampions", cat: "SECONDARY", pos: 1, puntaje: 94.7 },
-  { equipo: "RoboChampions Jr.", cat: "PRIMARY", pos: 4, puntaje: 78.2 },
-  { equipo: "San Ramón Bots", cat: "SECONDARY", pos: 7, puntaje: 74.9 },
-];
-
-const HIST = [
-  { anio: "2022", valor: 65.0 },
-  { anio: "2023", valor: 74.1 },
-  { anio: "2024", valor: 82.6 },
-];
+/* HU-AN-03 — Reporte Institucional · /instituciones/:id/reporte
+ * Conectado a GET /api/analitica/instituciones/:id/reporte/?torneo_id= y ?historico=true
+ * El torneo del reporte actual se toma de ?torneo= (default "1").
+ */
 
 export function ReporteInstitucional() {
-  const maxHist = 100;
+  const { id = "" } = useParams();
+  const [sp] = useSearchParams();
+  const torneoId = sp.get("torneo") || "1";
+
+  const { data, status, errorMsg, errorCode, reload } = useAsyncData(
+    async () => {
+      const current = await analyticsService.getReporteInstitucional(id, torneoId);
+      let hist: ReporteInstitucionalHistDTO | null = null;
+      try {
+        hist = await analyticsService.getReporteInstitucionalHistorico(id);
+      } catch {
+        hist = null; // puede no haber histórico (un solo torneo)
+      }
+      return { current, hist } as { current: ReporteInstitucionalDTO; hist: ReporteInstitucionalHistDTO | null };
+    },
+    [id, torneoId]
+  );
+
+  const inst = data?.current;
+  const hist = data?.hist?.evolucion_historica ?? [];
+  const maxHist = hist.length ? Math.max(...hist.map((h) => h.puntaje_promedio)) : 100;
+  const mejora = hist.length >= 2 ? hist[hist.length - 1].puntaje_promedio - hist[0].puntaje_promedio : null;
+
+  const kpis = inst
+    ? [
+        { label: "Equipos totales", value: inst.total_equipos_participantes, accentColor: viewColor.indigo },
+        { label: "Mejor posición", value: `${inst.mejor_posicion_lograda}°`, accentColor: sev.gold },
+        { label: "Prom. institucional", value: `${inst.puntaje_promedio_institucional.toFixed(1)}`, accentColor: sev.info },
+        { label: "Criterio destacado", value: inst.criterio_mas_destacado || "—", accentColor: sev.success },
+        { label: "Tipo", value: inst.tipo, accentColor: "#22c55e" },
+        { label: "Torneos histórico", value: hist.length || 1, accentColor: "#f43f5e" },
+      ]
+    : [];
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageHeader
-        title="Reporte institucional — I.E. San Ramón"
+        title={inst ? `Reporte institucional — ${inst.nombre_institucion}` : "Reporte institucional"}
         right={<ExportPdfButton label="PDF" variant="solid" accent={viewColor.indigo} />}
       />
 
-      {/* InstitucionIdentityCard */}
-      <Panel accentBar={sev.info}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">I.E. San Ramón</h2>
-            <p className="mt-1 text-sm text-slate-500">Tipo: PÚBLICA · Ciudad: Huancayo · Junín, PE</p>
-          </div>
-          <div className="flex gap-2">
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Histórico: 3 torneos</span>
-            <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">2022–2024</span>
-          </div>
-        </div>
-      </Panel>
-
-      <KpiCardRow cards={KPIS} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Panel title="Equipos en torneo actual (2024)">
-          <table className="w-full text-sm">
-            <thead className="text-xs uppercase text-slate-400">
-              <tr className="border-b border-slate-100">
-                <th className="py-2 text-left font-semibold">Equipo</th>
-                <th className="py-2 text-left font-semibold">Categoría</th>
-                <th className="py-2 text-center font-semibold">Posición</th>
-                <th className="py-2 text-right font-semibold">Puntaje</th>
-              </tr>
-            </thead>
-            <tbody>
-              {EQUIPOS.map((e, i) => (
-                <tr key={e.equipo} className="border-b border-slate-50" style={i === 0 ? { backgroundColor: "#fef3c7" } : undefined}>
-                  <td className="py-2.5 font-semibold text-slate-900">{e.equipo}</td>
-                  <td className="py-2.5">
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{e.cat}</span>
-                  </td>
-                  <td className="py-2.5 text-center text-slate-600">
-                    {e.pos} {medalEmoji(e.pos)}
-                  </td>
-                  <td className="py-2.5 text-right font-bold" style={{ color: i === 0 ? sev.warning : "#334155" }}>
-                    {e.puntaje}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-4">
-            <p className="mb-1 text-sm text-slate-600">
-              Puntaje promedio institucional 2024: <strong className="text-slate-800">82.6 pts</strong>
-            </p>
-            <div className="h-3 w-full rounded-full bg-slate-100">
-              <div className="h-3 rounded-full" style={{ width: "82.6%", backgroundColor: viewColor.indigo }} />
-            </div>
-          </div>
-        </Panel>
-
-        <Panel title="Evolución histórica (2022–2024)" subtitle="Puntaje promedio institucional por torneo">
-          <div className="flex items-end justify-around gap-4 h-48 pt-4">
-            {HIST.map((h, i) => (
-              <div key={h.anio} className="flex flex-1 flex-col items-center justify-end">
-                <span className="mb-1 text-xs font-semibold text-slate-600">{h.valor}</span>
-                <div
-                  className="w-full max-w-[64px] rounded-t-md"
-                  style={{
-                    height: `${(h.valor / maxHist) * 100}%`,
-                    backgroundColor: i === HIST.length - 1 ? viewColor.indigo : "#a5b4fc",
-                  }}
-                />
-                <span className="mt-2 text-xs text-slate-400">{h.anio}</span>
+      <AsyncBoundary
+        status={status}
+        errorMsg={errorMsg}
+        errorCode={errorCode}
+        onRetry={reload}
+        loadingLabel="Cargando reporte institucional…"
+        emptyLabel="Esta institución no tiene equipos en el torneo indicado."
+      >
+        {inst && (
+          <>
+            <Panel accentBar={sev.info}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">{inst.nombre_institucion}</h2>
+                  <p className="mt-1 text-sm text-slate-500">Tipo: {inst.tipo} · Torneo: {inst.torneo_id}</p>
+                </div>
+                {hist.length > 0 && (
+                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
+                    Histórico: {hist.length} torneos
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
-          <p className="mt-3 text-center text-sm font-medium text-green-600">↑ +17.6 pts de mejora en 3 torneos</p>
-        </Panel>
-      </div>
+            </Panel>
 
-      <Panel title="Observaciones y recomendaciones institucionales" accentBar={sev.info}>
-        <ul className="space-y-2 text-sm text-slate-600 list-none">
-          <li>· La institución muestra tendencia positiva sostenida en los últimos tres torneos.</li>
-          <li>· El equipo RoboChampions logró el primer lugar con 94.7 pts.</li>
-          <li>· Los equipos PRIMARY presentan margen de mejora en Robustez del sistema.</li>
-        </ul>
-        <div className="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <span>⚠️</span>
-          <span>
-            <strong>Recomendación:</strong> Reforzar talleres de programación defensiva y robustez en categorías de primaria.
-          </span>
-        </div>
-      </Panel>
+            <KpiCardRow cards={kpis} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Panel title="Equipos en el torneo">
+                <table className="w-full text-sm">
+                  <thead className="text-xs uppercase text-slate-400">
+                    <tr className="border-b border-slate-100">
+                      <th className="py-2 text-left font-semibold">Equipo</th>
+                      <th className="py-2 text-center font-semibold">Posición</th>
+                      <th className="py-2 text-right font-semibold">Puntaje</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inst.posiciones_obtenidas.map((p, i) => (
+                      <tr key={p.equipo_id} className="border-b border-slate-50" style={i === 0 ? { backgroundColor: "#fef3c7" } : undefined}>
+                        <td className="py-2.5 font-semibold text-slate-900">{p.nombre_equipo}</td>
+                        <td className="py-2.5 text-center text-slate-600">{p.posicion_final} {medalEmoji(p.posicion_final)}</td>
+                        <td className="py-2.5 text-right font-bold" style={{ color: i === 0 ? sev.warning : "#334155" }}>
+                          {p.puntaje_acumulado.toFixed(1)}
+                        </td>
+                      </tr>
+                    ))}
+                    {inst.posiciones_obtenidas.length === 0 && (
+                      <tr><td colSpan={3} className="py-3 text-center text-xs text-slate-400">Sin equipos.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+                <div className="mt-4">
+                  <p className="mb-1 text-sm text-slate-600">
+                    Puntaje promedio institucional: <strong className="text-slate-800">{inst.puntaje_promedio_institucional.toFixed(1)}</strong>
+                  </p>
+                </div>
+              </Panel>
+
+              <Panel title="Evolución histórica" subtitle="Puntaje promedio institucional por torneo">
+                {hist.length > 0 ? (
+                  <>
+                    <div className="flex items-end justify-around gap-4 h-48 pt-4">
+                      {hist.map((h, i) => (
+                        <div key={h.torneo_id} className="flex flex-1 flex-col items-center justify-end">
+                          <span className="mb-1 text-xs font-semibold text-slate-600">{h.puntaje_promedio.toFixed(1)}</span>
+                          <div
+                            className="w-full max-w-[64px] rounded-t-md"
+                            style={{ height: `${(h.puntaje_promedio / maxHist) * 100}%`, backgroundColor: i === hist.length - 1 ? viewColor.indigo : "#a5b4fc" }}
+                          />
+                          <span className="mt-2 text-xs text-slate-400">{(h.fecha || "").slice(0, 4) || h.nombre_torneo}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {mejora != null && (
+                      <p className={`mt-3 text-center text-sm font-medium ${mejora >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        {mejora >= 0 ? "↑ +" : "↓ "}{mejora.toFixed(1)} pts en {hist.length} torneos
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-400">Solo hay un torneo registrado; aún no hay evolución histórica.</p>
+                )}
+              </Panel>
+            </div>
+
+            <Panel title="Observaciones institucionales" accentBar={sev.info}>
+              <ul className="space-y-2 text-sm text-slate-600">
+                <li>· La institución participó con {inst.total_equipos_participantes} equipo(s), logrando como mejor posición el {inst.mejor_posicion_lograda}°.</li>
+                <li>· Su criterio más destacado fue: <strong>{inst.criterio_mas_destacado || "—"}</strong>.</li>
+                {mejora != null && mejora >= 0 && <li>· Muestra una tendencia positiva sostenida de +{mejora.toFixed(1)} pts en su histórico.</li>}
+              </ul>
+            </Panel>
+          </>
+        )}
+      </AsyncBoundary>
     </div>
   );
 }
